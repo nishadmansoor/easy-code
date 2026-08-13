@@ -10,13 +10,13 @@ Example: you ask "How does HTML escaping work?" and it returns the escape functi
 
 Completed:
 
--GitHub ingestion and cloning
--Python AST parsing
--Semantic chunking
--Local embeddings
--Vector storage and search (Qdrant)
--Code graph with file/class/function/method nodes and relationships (Neo4j)
--REST API endpoints for all of the above
+1. GitHub ingestion and cloning
+2. Python AST parsing
+3. Semantic chunking
+4. Local embeddings
+5. Vector storage and search (Qdrant)
+6. Code graph with file/class/function/method nodes and relationships (Neo4j)
+7. REST API endpoints for all of the above
 
 
 Next steps:
