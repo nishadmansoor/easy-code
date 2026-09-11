@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EasyCode — understand any codebase</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">&lt;/&gt;</span>
+      <div>
+        <h1>EasyCode</h1>
+        <p>Semantic retrieval + a structural code graph</p>
+      </div>
+    </div>
+    <div class="status-pills" id="service-health"></div>
+  </header>
+
+  <main>
+    <!-- Step 1: submit a repository -->
+    <section class="panel" id="submit-panel">
+      <h2>Index a repository</h2>
+      <form id="repo-form" class="row">
+        <input
+          type="url"
+          id="repo-url"
+          placeholder="https://github.com/psf/requests"
+          required
+          autocomplete="off"
+        />
+        <button type="submit" id="submit-button">Index</button>
+      </form>
+      <p class="hint">
+        Public HTTP(S) git repositories only. Repository files are read and parsed —
+        never executed.
+      </p>
+      <div id="submit-error" class="error hidden"></div>
+
+      <div id="known-repos" class="known-repos hidden">
+        <h3>Previously indexed</h3>
+        <ul id="repo-list"></ul>
+      </div>
+    </section>
+
+    <!-- Step 2: indexing progress -->
+    <section class="panel hidden" id="progress-panel">
+      <h2>Indexing <span id="progress-name" class="mono"></span></h2>
+      <ol class="stages" id="stages"></ol>
+      <p class="hint" id="progress-detail"></p>
+      <div id="progress-error" class="error hidden"></div>
+    </section>
+
+    <!-- Step 3: the workspace -->
+    <section class="workspace hidden" id="workspace">
+      <nav class="tabs">
+        <button class="tab active" data-tab="overview">Overview</button>
+        <button class="tab" data-tab="ask">Ask</button>
+        <button class="tab" data-tab="files">Files</button>
+        <button class="tab" data-tab="graph">Graph</button>
+        <button class="tab reset" id="new-repo">New repository</button>
+      </nav>
+
+      <div class="tab-panel active" id="tab-overview">
+        <div class="stats" id="repo-stats"></div>
+        <article class="prose" id="overview-text"></article>
+      </div>
+
+      <div class="tab-panel" id="tab-ask">
+        <form id="ask-form" class="row">
+          <input
+            type="text"
+            id="question"
+            placeholder="What happens when a user submits a login request?"
+            autocomplete="off"
+            required
+          />
+          <button type="submit" id="ask-button">Ask</button>
+        </form>
+
+        <div class="ask-options">
+          <label>
+            <input type="radio" name="mode" value="hybrid" checked />
+            Hybrid <span class="muted">(semantic + graph)</span>
+          </label>
+          <label>
+            <input type="radio" name="mode" value="vector" />
+            Vector only <span class="muted">(baseline)</span>
+          </label>
+        </div>
+
+        <div class="examples" id="examples"></div>
+
+        <div id="answer-area"></div>
+      </div>
+
+      <div class="tab-panel" id="tab-files">
+        <div class="files-layout">
+          <aside class="file-tree">
+            <input type="search" id="file-filter" placeholder="Filter files…" />
+            <ul id="file-list"></ul>
+          </aside>
+          <div class="file-view">
+            <div class="file-view-header" id="file-view-header">
+              Select a file to view its source.
+            </div>
+            <pre id="file-content"><code></code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-graph">
+        <div class="graph-grid">
+          <div class="card">
+            <h3>Graph contents</h3>
+            <div id="graph-stats"></div>
+          </div>
+          <div class="card">
+            <h3>Most depended-on files</h3>
+            <ul id="central-files"></ul>
+          </div>
+          <div class="card">
+            <h3>Likely entry points</h3>
+            <ul id="entry-points"></ul>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Explore relationships</h3>
+          <div class="row">
+            <input type="text" id="graph-query" placeholder="Function, method or class name" />
+            <button id="graph-lookup">Look up</button>
+          </div>
+          <div id="graph-results"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

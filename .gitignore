@@ -28,7 +28,9 @@ Thumbs.db
 # Data
 /tmp/
 *.db
-data/repos/
+# Runtime workspace: cloned repositories, the metadata database and the
+# downloaded model cache. All of it is regenerated on demand.
+data/
 
 # Packaging
 *.egg-info/
