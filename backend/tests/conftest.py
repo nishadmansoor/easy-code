@@ -15,6 +15,7 @@ from backend.app.parsing import parse_repository
 
 FIXTURES = Path(__file__).parent / "fixtures"
 SAMPLE_REPO = FIXTURES / "sample_repo"
+SAMPLE_JS_REPO = FIXTURES / "sample_js_repo"
 
 REPO_ID = "test-repo"
 
@@ -33,6 +34,16 @@ def sample_repo_path() -> Path:
 @pytest.fixture(scope="session")
 def parsed_sample(sample_repo_path: Path) -> ParsedRepository:
     return parse_repository(sample_repo_path, REPO_ID)
+
+
+@pytest.fixture(scope="session")
+def js_repo_path() -> Path:
+    return SAMPLE_JS_REPO
+
+
+@pytest.fixture(scope="session")
+def parsed_js_sample(js_repo_path: Path) -> ParsedRepository:
+    return parse_repository(js_repo_path, REPO_ID)
 
 
 @pytest.fixture

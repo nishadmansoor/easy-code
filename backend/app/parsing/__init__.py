@@ -22,6 +22,7 @@ from backend.app.models.entities import (
     InheritanceEdge,
     ParsedRepository,
 )
+from backend.app.parsing.javascript_parser import parse_javascript_file
 from backend.app.parsing.markdown_parser import parse_markdown_file
 from backend.app.parsing.python_parser import parse_python_file
 
@@ -31,8 +32,13 @@ FileParser = Callable[[Path, str, str], ParsedRepository]
 
 PARSERS: dict[str, FileParser] = {
     "python": parse_python_file,
+    "javascript": parse_javascript_file,
+    "typescript": parse_javascript_file,
     "markdown": parse_markdown_file,
 }
+
+#: Extensions a JavaScript/TypeScript import may resolve to, in resolution order.
+JS_EXTENSIONS = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs")
 
 CALLABLE_TYPES = {EntityType.FUNCTION, EntityType.METHOD}
 
@@ -124,6 +130,56 @@ def module_to_candidate_paths(module: str, source_file: str) -> list[str]:
     return [f"{stem}.py", f"{stem}/__init__.py"]
 
 
+def js_module_to_candidate_paths(module: str, source_file: str) -> list[str]:
+    """Candidate repository paths for a JavaScript/TypeScript import.
+
+    Only relative specifiers resolve. A bare specifier like ``react`` is a
+    ``node_modules`` package, which is not part of the repository.
+    """
+    if not module.startswith("."):
+        return []
+
+    base = Path(source_file).parent / module
+    # Path normalises "a/b/../c" only via resolve(), which touches the disk;
+    # do it textually so this stays a pure function.
+    parts: list[str] = []
+    for part in base.as_posix().split("/"):
+        if part in ("", "."):
+            continue
+        if part == "..":
+            if parts:
+                parts.pop()
+            continue
+        parts.append(part)
+    stem = "/".join(parts)
+    if not stem:
+        return []
+
+    candidates: list[str] = []
+    suffix = Path(stem).suffix
+    if suffix in JS_EXTENSIONS:
+        candidates.append(stem)
+        # TypeScript sources are imported with a .js specifier under NodeNext.
+        without = stem[: -len(suffix)]
+        candidates.extend(f"{without}{ext}" for ext in JS_EXTENSIONS)
+    else:
+        candidates.extend(f"{stem}{ext}" for ext in JS_EXTENSIONS)
+        candidates.extend(f"{stem}/index{ext}" for ext in JS_EXTENSIONS)
+
+    seen: list[str] = []
+    for candidate in candidates:
+        if candidate not in seen:
+            seen.append(candidate)
+    return seen
+
+
+def candidate_paths_for(module: str, source_file: str) -> list[str]:
+    """Dispatch to the right resolver for the importing file's language."""
+    if Path(source_file).suffix.lower() in JS_EXTENSIONS:
+        return js_module_to_candidate_paths(module, source_file)
+    return module_to_candidate_paths(module, source_file)
+
+
 def resolve_imports(imports: list[ImportEdge], known_files: set[str]) -> None:
     """Point each import at a repository file when one plainly matches.
 
@@ -132,14 +188,25 @@ def resolve_imports(imports: list[ImportEdge], known_files: set[str]) -> None:
     resolve to nothing (third-party or stdlib) are left unresolved.
     """
     for edge in imports:
-        for candidate in module_to_candidate_paths(edge.module, edge.source_file):
+        is_javascript = Path(edge.source_file).suffix.lower() in JS_EXTENSIONS
+
+        for candidate in candidate_paths_for(edge.module, edge.source_file):
             if candidate in known_files:
                 edge.resolved_file = candidate
                 break
+            # A relative JS specifier is already rooted at the importing file,
+            # so a suffix match would be a guess rather than a resolution.
+            if is_javascript:
+                continue
             matches = [path for path in known_files if path.endswith("/" + candidate)]
             if len(matches) == 1:
                 edge.resolved_file = matches[0]
                 break
+
+        if is_javascript:
+            if edge.resolved_file == edge.source_file:
+                edge.resolved_file = None
+            continue
 
         if edge.resolved_file is None and not edge.is_relative:
             # ``from package import module`` where the module is the leaf file.

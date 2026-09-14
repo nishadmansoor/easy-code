@@ -434,6 +434,115 @@ pre {
 .rel-group { margin-top: 14px; }
 .rel-group h4 { font-size: 12.5px; color: var(--muted); margin: 0 0 8px; }
 
+/* ------------------------------------------------- graph visualisation */
+
+.graph-card { padding-bottom: 12px; }
+
+.graph-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.graph-toolbar h3 { margin: 0; }
+
+.graph-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.graph-controls input[type="text"] { min-width: 220px; padding: 7px 10px; font-size: 13px; }
+.graph-controls button { padding: 7px 14px; font-size: 13px; }
+
+.seg { position: relative; cursor: pointer; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg span {
+  display: inline-block;
+  padding: 7px 14px;
+  font-size: 13px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--muted);
+}
+.seg input:checked + span {
+  color: var(--text);
+  border-color: var(--accent-dim);
+  background: #22304d;
+}
+
+.graph-canvas-wrap {
+  position: relative;
+  background: #10131b;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  height: 480px;
+}
+
+#graph-canvas { width: 100%; height: 100%; display: block; cursor: grab; }
+#graph-canvas.dragging { cursor: grabbing; }
+
+.graph-empty {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.graph-empty.show { display: flex; }
+
+.graph-legend {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  color: var(--muted);
+  background: #10131bcc;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  pointer-events: none;
+}
+.graph-legend .swatch {
+  display: inline-block;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: -1px;
+}
+
+.node circle { cursor: pointer; transition: stroke-width 0.12s; }
+.node text {
+  font-family: var(--mono);
+  font-size: 10px;
+  fill: var(--muted);
+  pointer-events: none;
+  text-anchor: middle;
+}
+.node.selected circle { stroke: var(--text); stroke-width: 2.5; }
+.node.selected text { fill: var(--text); }
+.node.dimmed { opacity: 0.18; }
+.link { stroke: #39405280; stroke-width: 1.2; }
+.link.highlight { stroke: var(--accent); stroke-width: 2; }
+.link.dimmed { opacity: 0.08; }
+
+.graph-detail {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--muted);
+  min-height: 20px;
+}
+.graph-detail .cite { font-family: var(--mono); color: var(--accent); cursor: pointer; }
+.graph-detail .cite:hover { text-decoration: underline; }
+.graph-detail strong { color: var(--text); }
+
 @media (max-width: 860px) {
   .files-layout { grid-template-columns: 1fr; }
   .file-tree { max-height: 240px; }

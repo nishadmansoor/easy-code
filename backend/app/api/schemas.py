@@ -168,6 +168,36 @@ class GraphOverview(BaseModel):
     entry_points: list[dict] = []
 
 
+class NetworkNode(BaseModel):
+    id: str
+    label: str = ""
+    language: str | None = None
+    file_path: str | None = None
+    entity_type: str | None = None
+    start_line: int = 0
+    end_line: int = 0
+    imports: int = 0
+    importers: int = 0
+    definitions: int = 0
+    focus: bool = False
+
+
+class NetworkEdge(BaseModel):
+    source: str
+    target: str
+
+
+class NetworkResponse(BaseModel):
+    """Nodes and edges for the graph visualisation."""
+
+    scope: str
+    focus: str | None = None
+    nodes: list[NetworkNode] = []
+    edges: list[NetworkEdge] = []
+    total_nodes: int = 0
+    truncated: bool = False
+
+
 class HealthResponse(BaseModel):
     status: str
     qdrant: bool

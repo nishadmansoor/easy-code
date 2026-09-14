@@ -513,7 +513,434 @@ async function loadGraph(repoId) {
         `<li><span>${escapeHtml(row.file_path)}</span><span class="n">${row.dependencies}</span></li>`
     )
     .join("");
+
+  drawGraph();
 }
+
+// ------------------------------------------------- graph visualisation
+
+/*
+ * A small force-directed layout, written out rather than pulled from d3, to
+ * keep the frontend build-free. Three forces: repulsion between every pair,
+ * spring attraction along edges, and a weak pull toward the centre. Cooling
+ * alpha stops it once it settles.
+ */
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+const LANGUAGE_COLORS = {
+  python: "#5fd3a0",
+  javascript: "#e5c07b",
+  typescript: "#6ea8fe",
+  markdown: "#b98cff",
+  java: "#e06c75",
+};
+const DEFAULT_COLOR = "#7f8aa3";
+const CALL_COLORS = { function: "#6ea8fe", method: "#b98cff" };
+
+const graph = {
+  nodes: [],
+  links: [],
+  selected: null,
+  frame: null,
+  transform: { x: 0, y: 0, k: 1 },
+};
+
+function nodeColor(node) {
+  if (graph.scope === "calls") {
+    return node.focus ? "#ffffff" : CALL_COLORS[node.entity_type] || DEFAULT_COLOR;
+  }
+  return LANGUAGE_COLORS[node.language] || DEFAULT_COLOR;
+}
+
+function nodeRadius(node) {
+  if (graph.scope === "calls") return node.focus ? 11 : 7;
+  // Area grows with how many files depend on this one.
+  return Math.min(5 + Math.sqrt(node.importers || 0) * 3.5, 20);
+}
+
+async function drawGraph() {
+  if (!state.repo) return;
+
+  const scope = document.querySelector('input[name="graph-scope"]:checked').value;
+  const focus = $("graph-focus").value.trim();
+  const svg = $("graph-canvas");
+  const empty = $("graph-empty");
+
+  if (graph.frame) cancelAnimationFrame(graph.frame);
+  svg.innerHTML = "";
+  empty.classList.remove("show");
+  $("graph-detail").textContent = "Loading…";
+
+  if (scope === "calls" && !focus) {
+    showGraphEmpty(
+      "Enter a function or method name above, then press Draw, to see what calls it and what it calls."
+    );
+    return;
+  }
+
+  let data;
+  try {
+    const params = new URLSearchParams({ scope, limit: "150" });
+    if (scope === "calls") params.set("focus", focus);
+    data = await api(`/repositories/${state.repo.id}/graph/network?${params}`);
+  } catch (error) {
+    showGraphEmpty(error.message);
+    return;
+  }
+
+  graph.scope = data.scope;
+
+  if (!data.nodes.length) {
+    showGraphEmpty(
+      scope === "calls"
+        ? `No call relationships found for “${escapeHtml(focus)}”. ` +
+            `Try a name from the Files tab, or switch to Imports.`
+        : "This repository has no import relationships to draw. " +
+          "Structural parsing currently covers Python only, so a repository in " +
+          "another language will have an empty graph."
+    );
+    return;
+  }
+
+  const rect = svg.getBoundingClientRect();
+  const width = rect.width || 800;
+  const height = rect.height || 480;
+
+  graph.nodes = data.nodes.map((node, index) => ({
+    ...node,
+    // Seed on a circle so the layout unfolds predictably instead of exploding.
+    x: width / 2 + Math.cos((index / data.nodes.length) * 2 * Math.PI) * Math.min(width, height) * 0.3,
+    y: height / 2 + Math.sin((index / data.nodes.length) * 2 * Math.PI) * Math.min(width, height) * 0.3,
+    vx: 0,
+    vy: 0,
+  }));
+
+  const byId = new Map(graph.nodes.map((node) => [node.id, node]));
+  graph.links = data.edges
+    .map((edge) => ({ source: byId.get(edge.source), target: byId.get(edge.target) }))
+    .filter((link) => link.source && link.target && link.source !== link.target);
+
+  renderGraph(svg, width, height);
+  runSimulation(width, height);
+
+  const label =
+    data.scope === "calls"
+      ? `Call graph around <strong>${escapeHtml(data.focus)}</strong>: ` +
+        `${data.nodes.length} nodes, ${data.edges.length} calls.`
+      : `Import graph: <strong>${data.nodes.length}</strong> files, ` +
+        `${data.edges.length} import edges` +
+        (data.truncated
+          ? `, showing the ${data.nodes.length} most connected of ${data.total_nodes}`
+          : "") +
+        ". Node size = how many files import it.";
+  $("graph-detail").innerHTML = `${label} Click a node to inspect it.`;
+}
+
+function showGraphEmpty(message) {
+  const empty = $("graph-empty");
+  empty.innerHTML = message;
+  empty.classList.add("show");
+  $("graph-legend").innerHTML = "";
+  $("graph-detail").textContent = "";
+}
+
+function renderGraph(svg, width, height) {
+  const root = document.createElementNS(SVG_NS, "g");
+  root.setAttribute("id", "graph-root");
+  svg.appendChild(root);
+
+  const linkLayer = document.createElementNS(SVG_NS, "g");
+  const nodeLayer = document.createElementNS(SVG_NS, "g");
+  root.append(linkLayer, nodeLayer);
+
+  for (const link of graph.links) {
+    const line = document.createElementNS(SVG_NS, "line");
+    line.setAttribute("class", "link");
+    link.el = line;
+    linkLayer.appendChild(line);
+  }
+
+  for (const node of graph.nodes) {
+    const group = document.createElementNS(SVG_NS, "g");
+    group.setAttribute("class", "node");
+
+    const circle = document.createElementNS(SVG_NS, "circle");
+    circle.setAttribute("r", nodeRadius(node));
+    circle.setAttribute("fill", nodeColor(node));
+    circle.setAttribute("stroke", "#10131b");
+    circle.setAttribute("stroke-width", "1.5");
+
+    const text = document.createElementNS(SVG_NS, "text");
+    text.setAttribute("dy", nodeRadius(node) + 11);
+    text.textContent = node.label;
+
+    const title = document.createElementNS(SVG_NS, "title");
+    title.textContent =
+      graph.scope === "calls"
+        ? `${node.entity_type} ${node.label}\n${node.file_path}:${node.start_line}-${node.end_line}`
+        : `${node.id}\n${node.importers} importers, ${node.imports} imports, ` +
+          `${node.definitions} definitions`;
+
+    group.append(circle, text, title);
+    node.el = group;
+    nodeLayer.appendChild(group);
+
+    group.addEventListener("mousedown", (event) => startNodeDrag(event, node, svg));
+    group.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (!node.moved) selectNode(node);
+    });
+  }
+
+  svg.addEventListener("click", () => selectNode(null));
+  attachPanZoom(svg, root);
+  renderLegend();
+}
+
+function renderLegend() {
+  const entries =
+    graph.scope === "calls"
+      ? [
+          ["#ffffff", "focus"],
+          [CALL_COLORS.function, "function"],
+          [CALL_COLORS.method, "method"],
+        ]
+      : [...new Set(graph.nodes.map((n) => n.language))]
+          .filter(Boolean)
+          .map((language) => [LANGUAGE_COLORS[language] || DEFAULT_COLOR, language]);
+
+  $("graph-legend").innerHTML = entries
+    .map(
+      ([color, label]) =>
+        `<span><span class="swatch" style="background:${color}"></span>${escapeHtml(label)}</span>`
+    )
+    .join("");
+}
+
+function runSimulation(width, height) {
+  const REPULSION = 5200;
+  const SPRING = 0.014;
+  const SPRING_LENGTH = 90;
+  const CENTER_PULL = 0.0016;
+  const DAMPING = 0.86;
+
+  let alpha = 1;
+
+  function step() {
+    alpha *= 0.985;
+
+    for (let i = 0; i < graph.nodes.length; i++) {
+      const a = graph.nodes[i];
+      for (let j = i + 1; j < graph.nodes.length; j++) {
+        const b = graph.nodes[j];
+        let dx = b.x - a.x;
+        let dy = b.y - a.y;
+        let distanceSq = dx * dx + dy * dy;
+        if (distanceSq < 1) {
+          // Coincident nodes would divide by zero; nudge them apart.
+          dx = Math.random() - 0.5;
+          dy = Math.random() - 0.5;
+          distanceSq = 1;
+        }
+        const distance = Math.sqrt(distanceSq);
+        const force = REPULSION / distanceSq;
+        const fx = (dx / distance) * force;
+        const fy = (dy / distance) * force;
+        if (!a.fixed) { a.vx -= fx; a.vy -= fy; }
+        if (!b.fixed) { b.vx += fx; b.vy += fy; }
+      }
+    }
+
+    for (const link of graph.links) {
+      const dx = link.target.x - link.source.x;
+      const dy = link.target.y - link.source.y;
+      const distance = Math.sqrt(dx * dx + dy * dy) || 1;
+      const force = (distance - SPRING_LENGTH) * SPRING;
+      const fx = (dx / distance) * force;
+      const fy = (dy / distance) * force;
+      if (!link.source.fixed) { link.source.vx += fx; link.source.vy += fy; }
+      if (!link.target.fixed) { link.target.vx -= fx; link.target.vy -= fy; }
+    }
+
+    for (const node of graph.nodes) {
+      if (node.fixed) continue;
+      node.vx += (width / 2 - node.x) * CENTER_PULL;
+      node.vy += (height / 2 - node.y) * CENTER_PULL;
+      node.vx *= DAMPING;
+      node.vy *= DAMPING;
+      node.x += node.vx * alpha;
+      node.y += node.vy * alpha;
+    }
+
+    paint();
+    if (alpha > 0.006) graph.frame = requestAnimationFrame(step);
+  }
+
+  graph.frame = requestAnimationFrame(step);
+}
+
+function paint() {
+  for (const link of graph.links) {
+    link.el.setAttribute("x1", link.source.x);
+    link.el.setAttribute("y1", link.source.y);
+    link.el.setAttribute("x2", link.target.x);
+    link.el.setAttribute("y2", link.target.y);
+  }
+  for (const node of graph.nodes) {
+    node.el.setAttribute("transform", `translate(${node.x},${node.y})`);
+  }
+}
+
+function selectNode(node) {
+  graph.selected = node;
+
+  if (!node) {
+    graph.nodes.forEach((n) => n.el.classList.remove("dimmed", "selected"));
+    graph.links.forEach((l) => l.el.classList.remove("dimmed", "highlight"));
+    $("graph-detail").innerHTML = "Click a node to inspect it.";
+    return;
+  }
+
+  const connected = new Set([node]);
+  for (const link of graph.links) {
+    if (link.source === node) connected.add(link.target);
+    if (link.target === node) connected.add(link.source);
+  }
+
+  for (const other of graph.nodes) {
+    other.el.classList.toggle("dimmed", !connected.has(other));
+    other.el.classList.toggle("selected", other === node);
+  }
+  for (const link of graph.links) {
+    const touches = link.source === node || link.target === node;
+    link.el.classList.toggle("highlight", touches);
+    link.el.classList.toggle("dimmed", !touches);
+  }
+
+  renderNodeDetail(node);
+}
+
+function renderNodeDetail(node) {
+  const detail = $("graph-detail");
+
+  if (graph.scope === "calls") {
+    const callers = graph.links.filter((l) => l.target === node).map((l) => l.source.label);
+    const callees = graph.links.filter((l) => l.source === node).map((l) => l.target.label);
+    detail.innerHTML =
+      `<strong>${escapeHtml(node.entity_type)} ${escapeHtml(node.label)}</strong> — ` +
+      `<span class="cite" data-path="${escapeHtml(node.file_path)}" ` +
+      `data-start="${node.start_line}" data-end="${node.end_line}">` +
+      `${escapeHtml(node.file_path)}:${node.start_line}-${node.end_line}</span>` +
+      (callers.length ? `<br>Called by: ${escapeHtml(callers.join(", "))}` : "") +
+      (callees.length ? `<br>Calls: ${escapeHtml(callees.join(", "))}` : "");
+  } else {
+    const importers = graph.links.filter((l) => l.target === node).map((l) => l.source.label);
+    const imports = graph.links.filter((l) => l.source === node).map((l) => l.target.label);
+    detail.innerHTML =
+      `<strong><span class="cite" data-path="${escapeHtml(node.id)}">` +
+      `${escapeHtml(node.id)}</span></strong> — ${node.definitions} definitions` +
+      (importers.length ? `<br>Imported by: ${escapeHtml(importers.join(", "))}` : "") +
+      (imports.length ? `<br>Imports: ${escapeHtml(imports.join(", "))}` : "");
+  }
+
+  detail.querySelectorAll(".cite").forEach((el) =>
+    el.addEventListener("click", () => {
+      switchTab("files");
+      openFile(
+        el.dataset.path,
+        el.dataset.start ? Number(el.dataset.start) : undefined,
+        el.dataset.end ? Number(el.dataset.end) : undefined
+      );
+    })
+  );
+}
+
+function startNodeDrag(event, node, svg) {
+  event.preventDefault();
+  event.stopPropagation();
+  node.moved = false;
+  node.fixed = true;
+
+  const move = (moveEvent) => {
+    node.moved = true;
+    const point = toGraphCoords(svg, moveEvent);
+    node.x = point.x;
+    node.y = point.y;
+    node.vx = 0;
+    node.vy = 0;
+    paint();
+  };
+  const up = () => {
+    node.fixed = false;
+    window.removeEventListener("mousemove", move);
+    window.removeEventListener("mouseup", up);
+  };
+  window.addEventListener("mousemove", move);
+  window.addEventListener("mouseup", up);
+}
+
+function toGraphCoords(svg, event) {
+  const rect = svg.getBoundingClientRect();
+  const { x, y, k } = graph.transform;
+  return {
+    x: (event.clientX - rect.left - x) / k,
+    y: (event.clientY - rect.top - y) / k,
+  };
+}
+
+function attachPanZoom(svg, root) {
+  graph.transform = { x: 0, y: 0, k: 1 };
+
+  const apply = () => {
+    const { x, y, k } = graph.transform;
+    root.setAttribute("transform", `translate(${x},${y}) scale(${k})`);
+  };
+
+  svg.addEventListener("wheel", (event) => {
+    event.preventDefault();
+    const rect = svg.getBoundingClientRect();
+    const mx = event.clientX - rect.left;
+    const my = event.clientY - rect.top;
+    const factor = event.deltaY < 0 ? 1.12 : 1 / 1.12;
+    const k = Math.max(0.2, Math.min(4, graph.transform.k * factor));
+    // Keep the point under the cursor stationary while zooming.
+    graph.transform.x = mx - ((mx - graph.transform.x) * k) / graph.transform.k;
+    graph.transform.y = my - ((my - graph.transform.y) * k) / graph.transform.k;
+    graph.transform.k = k;
+    apply();
+  }, { passive: false });
+
+  svg.addEventListener("mousedown", (event) => {
+    if (event.target.closest(".node")) return;
+    svg.classList.add("dragging");
+    const startX = event.clientX - graph.transform.x;
+    const startY = event.clientY - graph.transform.y;
+
+    const move = (moveEvent) => {
+      graph.transform.x = moveEvent.clientX - startX;
+      graph.transform.y = moveEvent.clientY - startY;
+      apply();
+    };
+    const up = () => {
+      svg.classList.remove("dragging");
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+    };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+  });
+}
+
+$("graph-redraw").addEventListener("click", drawGraph);
+$("graph-focus").addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    document.querySelector('input[name="graph-scope"][value="calls"]').checked = true;
+    drawGraph();
+  }
+});
+document
+  .querySelectorAll('input[name="graph-scope"]')
+  .forEach((radio) => radio.addEventListener("change", drawGraph));
 
 $("graph-lookup").addEventListener("click", async () => {
   const name = $("graph-query").value.trim();
@@ -569,8 +996,17 @@ $("graph-lookup").addEventListener("click", async () => {
 
   $("graph-results").innerHTML = groups.length
     ? groups.join("")
-    : `<p class="hint">No relationships found for “${escapeHtml(name)}”.</p>`;
+    : `<p class="hint">No relationships found for “${escapeHtml(name)}”. This box takes a
+       single function, method or class <em>name</em> — not a file path or a phrase.
+       Try one of the names listed in the Files tab, for example
+       <code>${escapeHtml(exampleEntityName())}</code>.</p>`;
 });
+
+/** A real name from this repository, so the error message is actionable. */
+function exampleEntityName() {
+  const node = graph.nodes.find((n) => graph.scope === "calls" && n.label);
+  return node ? node.label : "AuthService";
+}
 
 function group(title, entries) {
   return `<div class="rel-group"><h4>${escapeHtml(title)}</h4><ul>${entries

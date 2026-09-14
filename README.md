@@ -226,13 +226,107 @@ indexing time.
 Reports are written to `docs/results/` as JSON and Markdown, including a
 failure-case section.
 
-<!-- RESULTS -->
+### Results
 
-**A caveat on what these numbers mean.** Mention coverage is a coarse automatic
-proxy — it checks whether an answer names the components a correct answer should
-name, not whether the prose is good. Judging explanation quality properly needs
-human raters, and this harness does not pretend otherwise. The retrieval metrics
-and the hallucination rate are exact.
+Both systems used the same index, the same 12-item context budget, the same
+`all-MiniLM-L6-v2` embeddings and the same `qwen2.5:7b` model via Ollama.
+
+**`psf/requests`** — 121 files, 891 entities, 927 chunks, 886 graph nodes,
+2,194 relationships, indexed in 81s. 10 questions.
+
+| Metric | Vector-only | Hybrid | Δ |
+| --- | ---: | ---: | ---: |
+| Recall@1 | 0.550 | **0.700** | +0.150 |
+| Recall@3 | 0.850 | **0.950** | +0.100 |
+| Recall@5 | 0.950 | 0.950 | 0.000 |
+| Precision@5 | 0.258 | **0.395** | +0.137 |
+| MRR | 0.742 | **0.867** | +0.125 |
+| Entity coverage | 0.583 | **0.767** | +0.183 |
+| Citation accuracy | 0.900 | **1.000** | +0.100 |
+| Hallucination rate | 0.000 | 0.000 | 0.000 |
+
+**`miniapp`** (the deterministic fixture) — 13 files, 41 entities, 78
+relationships. 13 questions.
+
+| Metric | Vector-only | Hybrid | Δ |
+| --- | ---: | ---: | ---: |
+| Recall@3 | 0.731 | **0.776** | +0.045 |
+| Recall@5 | 0.904 | **0.936** | +0.032 |
+| Precision@5 | 0.323 | **0.458** | +0.135 |
+| MRR | 0.801 | **0.810** | +0.009 |
+| Entity coverage | 0.769 | **0.962** | +0.192 |
+| Mention coverage | 0.846 | **0.962** | +0.115 |
+| Citation coverage | 0.712 | **0.859** | +0.147 |
+| Citation accuracy | 0.923 | **1.000** | +0.077 |
+| Hallucination rate | 0.000 | 0.000 | 0.000 |
+
+**The answer to the research question is yes, with a specific shape.** The graph
+does not help the system find *more* relevant files — `relevant_file_rate` is
+1.000 for both, and Recall@5 is a tie on `requests`. It helps it rank the right
+file *first* (Recall@1 +0.150, MRR +0.125) and it sharply reduces the irrelevant
+material sent to the model (Precision@5 +0.137). Retrieving less, better.
+
+The clearest single case is *"Which classes inherit from `BaseAdapter`?"*. The
+vector baseline retrieved exactly the right file, `src/requests/adapters.py`,
+and still answered:
+
+> No classes directly inherit from `BaseAdapter`.
+
+That is wrong. Similarity put the right text in the context, but nothing in that
+text states the edge, so the model concluded it did not exist. The hybrid reads
+`CLASS_INHERITS_CLASS` from the graph and answers `HTTPAdapter`, correctly. This
+is the failure mode the project was built to fix: **a vector index can retrieve
+the right file and still not answer a question about structure.**
+
+Both systems hallucinate at 0.000 on the final run. That number was not free —
+see the failure analysis below.
+
+### Failure analysis
+
+The measurable definition of hallucination here is an answer citing a location
+that was never retrieved. Three distinct causes showed up during development,
+and all three were prompt-induced rather than retrieval failures:
+
+1. **The model copied the worked example out of the system prompt.** An early
+   prompt illustrated the citation format with `src/users/repository.py:20-78`.
+   The model reproduced those paths and line numbers against an unrelated
+   repository. Fixed by removing every copyable path and line number from the
+   example.
+2. **The model copied the format placeholder.** The rule said to cite as
+   `path/to/file.py:START-END`, and one answer cited
+   `path/to/src/requests/adapters.py:201-221` — prefix and all. Fixed by
+   describing the format instead of showing a fake path.
+3. **The model invented line ranges for files it had no snippet for.** Graph
+   facts legitimately name files (`models.py is imported by adapters.py`) that
+   may not be in the retrieved snippet set. Asked for a citation, the model
+   guessed plausible whole-file ranges like `:1-409`. Fixed by instructing it to
+   refer to such files by bare path with no line numbers.
+
+The verifier caught all three before they reached the user, which is the point
+of verifying rather than trusting the prompt. But they are a useful reminder
+that a small local model treats prompt content as source material.
+
+One honest miss remains: on `requests`, the hybrid's single navigation question
+(*"Where would I change the code to add a new retry policy?"*) scored 0.0 mention
+coverage, against 1.0 for the baseline. It retrieved `adapters.py` and ranked it
+first, then wrote an answer that never named the file. That is a generation
+failure on a correct retrieval, and with n=1 it is as likely to be sampling noise
+as a real regression.
+
+### What these numbers do and do not support
+
+The retrieval metrics are deterministic and reproduce exactly across runs. The
+answer-quality metrics do not: they come from a sampling 7B model over 10 and 13
+questions, so a single question flipping moves a category score by 0.1–0.2.
+Across four full runs during development, `mention_coverage` on `requests` moved
+between 0.800 and 1.000 for the hybrid with no code change between some of them.
+
+Treat the retrieval numbers as measured and the generation numbers as
+directional. Mention coverage in particular is a keyword proxy — it asks whether
+an answer names the components a correct answer should name, not whether the
+explanation is any good. Judging that needs human raters, and this harness does
+not pretend to.
+
 
 ---
 
@@ -310,9 +404,11 @@ environment.
 
 Known and worth stating plainly:
 
-- **Python only** for structural parsing. Other languages are detected and their
-  documentation is indexed, but no entities or relationships are extracted for
-  them. The parser registry is designed for this to be a drop-in addition.
+- **Python, JavaScript and TypeScript** have structural parsers. Java and
+  everything else are detected and their documentation is indexed, but no
+  entities or relationships are extracted for them, so the graph is empty for
+  those files. Adding a language means writing one parser function and
+  registering it; nothing downstream is language-specific.
 - **Static call resolution is name-based.** Dynamic dispatch, monkey-patching,
   reflection and decorator-rewritten functions are not tracked. When a name is
   ambiguous, no edge is written — recall is traded for precision.

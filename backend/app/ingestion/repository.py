@@ -127,7 +127,7 @@ LANGUAGE_EXTENSIONS = {
 
 #: Languages for which a structural parser is registered. Documentation
 #: languages are handled separately by the documentation parser.
-CODE_LANGUAGES = {"python"}
+CODE_LANGUAGES = {"python", "javascript", "typescript"}
 DOC_LANGUAGES = {"markdown"}
 
 # Framework detection is deliberately evidence-based: a marker only counts when

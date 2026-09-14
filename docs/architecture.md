@@ -65,10 +65,20 @@ building_graph → indexing → ready`, or `failed` with the reason recorded.
 Adding a language means writing that function and registering it; nothing else
 in the pipeline is language-specific.
 
-Python is parsed with the standard library `ast` module, extracting modules,
-classes, functions, methods, imports, calls and inheritance, along with
+Python is parsed with the standard library `ast` module. JavaScript and
+TypeScript (including `.jsx`/`.tsx`) are parsed with **tree-sitter**, since
+Python ships no JS grammar; both produce the same `ParsedRepository` shape —
+modules, classes, functions, methods, imports, calls and inheritance, along with
 signatures, docstrings, decorators and exact line ranges. Markdown is split at
 heading boundaries into documentation sections.
+
+JavaScript resolution differs from Python's in one respect: only *relative*
+specifiers (`./x`, `../x`) can name a repository file, and a specifier may omit
+its extension or point at a directory's `index` file, so a candidate list is
+tried in order (`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`, then `index.*`).
+A bare specifier like `react` is a `node_modules` package and stays unresolved.
+TypeScript's NodeNext convention of importing `./util.js` to mean `./util.ts` is
+handled explicitly.
 
 Every path stored anywhere is **relative to the repository root**, so citations
 are stable and never leak the indexing machine's filesystem.

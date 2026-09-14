@@ -111,6 +111,37 @@
       </div>
 
       <div class="tab-panel" id="tab-graph">
+        <div class="card graph-card">
+          <div class="graph-toolbar">
+            <h3>Code graph</h3>
+            <div class="graph-controls">
+              <label class="seg">
+                <input type="radio" name="graph-scope" value="files" checked />
+                <span>Imports</span>
+              </label>
+              <label class="seg">
+                <input type="radio" name="graph-scope" value="calls" />
+                <span>Calls</span>
+              </label>
+              <input
+                type="text"
+                id="graph-focus"
+                placeholder="focus a function or method…"
+                autocomplete="off"
+              />
+              <button id="graph-redraw" type="button">Draw</button>
+            </div>
+          </div>
+          <div class="graph-canvas-wrap">
+            <svg id="graph-canvas" role="img" aria-label="Repository code graph"></svg>
+            <div class="graph-empty" id="graph-empty"></div>
+            <div class="graph-legend" id="graph-legend"></div>
+          </div>
+          <div class="graph-detail" id="graph-detail">
+            Click a node to inspect it. Drag to rearrange, scroll to zoom.
+          </div>
+        </div>
+
         <div class="graph-grid">
           <div class="card">
             <h3>Graph contents</h3>
@@ -128,7 +159,11 @@
         <div class="card">
           <h3>Explore relationships</h3>
           <div class="row">
-            <input type="text" id="graph-query" placeholder="Function, method or class name" />
+            <input
+              type="text"
+              id="graph-query"
+              placeholder="One name, e.g. AuthService or find_by_email"
+            />
             <button id="graph-lookup">Look up</button>
           </div>
           <div id="graph-results"></div>

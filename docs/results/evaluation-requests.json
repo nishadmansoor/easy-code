@@ -30,12 +30,12 @@
       "relevant_file_rate": 1.0,
       "entity_coverage": 0.5833,
       "mention_coverage": 0.8,
-      "citation_accuracy": 0.95,
-      "citation_coverage": 0.9,
-      "hallucination_rate": 0.1,
+      "citation_accuracy": 0.9,
+      "citation_coverage": 0.85,
+      "hallucination_rate": 0.0,
       "abstention_rate": 0.2,
-      "mean_retrieval_seconds": 0.5709,
-      "mean_generation_seconds": 24.9942,
+      "mean_retrieval_seconds": 0.2991,
+      "mean_generation_seconds": 23.1784,
       "by_category": {
         "component": {
           "count": 3,
@@ -49,7 +49,7 @@
           "recall_at_5": 1.0,
           "mrr": 0.75,
           "relevant_file_rate": 1.0,
-          "mention_coverage": 1.0
+          "mention_coverage": 0.5
         },
         "navigation": {
           "count": 1,
@@ -63,7 +63,7 @@
           "recall_at_5": 0.8333,
           "mrr": 0.75,
           "relevant_file_rate": 1.0,
-          "mention_coverage": 0.3333
+          "mention_coverage": 0.6667
         },
         "repository": {
           "count": 1,
@@ -85,13 +85,13 @@
       "mrr": 0.8667,
       "relevant_file_rate": 1.0,
       "entity_coverage": 0.7667,
-      "mention_coverage": 1.0,
-      "citation_accuracy": 0.9357,
-      "citation_coverage": 0.85,
-      "hallucination_rate": 0.2,
+      "mention_coverage": 0.8,
+      "citation_accuracy": 1.0,
+      "citation_coverage": 0.8,
+      "hallucination_rate": 0.0,
       "abstention_rate": 0.0,
-      "mean_retrieval_seconds": 0.4218,
-      "mean_generation_seconds": 26.9044,
+      "mean_retrieval_seconds": 0.5112,
+      "mean_generation_seconds": 27.3161,
       "by_category": {
         "component": {
           "count": 3,
@@ -112,14 +112,14 @@
           "recall_at_5": 1.0,
           "mrr": 1.0,
           "relevant_file_rate": 1.0,
-          "mention_coverage": 1.0
+          "mention_coverage": 0.0
         },
         "relationship": {
           "count": 3,
           "recall_at_5": 0.8333,
           "mrr": 0.7778,
           "relevant_file_rate": 1.0,
-          "mention_coverage": 1.0
+          "mention_coverage": 0.6667
         },
         "repository": {
           "count": 1,
@@ -165,7 +165,7 @@
       "citation_coverage": 1.0,
       "hallucinated": false,
       "abstained": false,
-      "answer": "This repository contains the source code for the Requests library, a Python HTTP library designed to make sending HTTP/1.1 requests easier and more human-friendly. It supports both Python 2 and 3 and is used for making network requests in Python applications. The repository includes documentation on how to use the library, including examples of making GET and POST requests, handling responses, working with headers, and more.\n\nSources (retrieved context for this answer):\n- .github/SECURITY.md:24-30\n- docs/dev/contributing.rst:1-97\n- README.md:40-57\n- docs/community/updates.rst:1-18\n- AUTHORS.rst:1-136\n- docs/dev/contributing.rst:98-165",
+      "answer": "This repository contains the source code for the Requests library, a Python HTTP library designed to make sending HTTP/1.1 requests easier and more human-friendly. It supports both Python 2 and 3 and is used for making network requests in Python applications. The repository includes documentation, guidelines for contributing, release processes, and details on how to use the library, including handling different types of response content such as text, binary data, JSON, and raw socket responses.\n\nSources (retrieved context for this answer):\n- .github/SECURITY.md:24-30\n- docs/dev/contributing.rst:1-97\n- README.md:40-57\n- docs/community/updates.rst:1-18\n- AUTHORS.rst:1-136\n- docs/dev/contributing.rst:98-165",
       "citations": [
         ".github/SECURITY.md:24-30",
         "docs/dev/contributing.rst:1-97",
@@ -175,8 +175,8 @@
         "docs/dev/contributing.rst:98-165"
       ],
       "unverified_citations": [],
-      "retrieval_seconds": 1.066,
-      "generation_seconds": 29.404
+      "retrieval_seconds": 0.42,
+      "generation_seconds": 24.173
     },
     {
       "question_id": "req-comp-1",
@@ -207,17 +207,14 @@
       "citation_coverage": 1.0,
       "hallucinated": false,
       "abstained": false,
-      "answer": "Cookie handling is primarily implemented in `src/requests/cookies.py` and involves several components working together.\n\nCookies are created using the `create_cookie` function at `src/requests/cookies.py:494-528`. This function initializes a cookie with default settings, such as setting the domain to an empty string. It also handles unexpected keyword arguments by raising a `TypeError`.\n\nThe `RequestsCookieJar` class at `src/requests/cookies.py:191-476` is a compatibility layer that allows dictionary-like operations on top of `http.cookiejar.CookieJar`. This class provides methods for setting and getting cookies, as well as iterating over them. The `set_cookie` method in this class (line `src/requests/cookies.py:382-389`) ensures that cookie values are properly formatted before being stored.\n\nWhen preparing requests to send cookies, the `prepare_cookies` method at `src/requests/models.py:699-720` is called. This method checks if the given cookies are already a `CookieJar` instance or a dictionary and converts it into a `RequestsCookieJar`. If necessary, it generates a `Cookie` header from these cookies.\n\nSources:\n- src/requests/cookies.py:494-528\n- src/requests/cookies.py:191-476\n- src/requests/models.py:699-720\n\nCaveat: The handling of cookie values and headers is also involved in `src/requests/utils.py:511-519`, but the primary implementation details are found in the other files mentioned.",
+      "answer": "Cookie handling is primarily implemented in `src/requests/cookies.py` and `src/requests/models.py`.\n\nIn `src/requests/cookies.py`, the class `RequestsCookieJar` provides a dictionary-like interface for managing cookies. It includes methods to set, get, and manipulate cookie values. The function `create_cookie` creates a new cookie object from given parameters, while `set_cookie` updates an existing cookie in the jar.\n\nIn `src/requests/models.py`, the method `prepare_cookies` prepares HTTP cookies by generating a `Cookie` header using the `RequestsCookieJar`. This method is called during request preparation to ensure that the appropriate cookies are included in the headers sent with the request. The class `RequestsCookieJar` is used here as well, demonstrating its integration into the requests model.\n\nSources:\n- src/requests/cookies.py:191-476\n- src/requests/models.py:699-720\n\nCaveat: The evidence does not provide detailed implementation of how `RequestsCookieJar` interacts with other parts of the codebase beyond these two locations.",
       "citations": [
-        "src/requests/cookies.py:494-528",
         "src/requests/cookies.py:191-476",
-        "src/requests/cookies.py:382-389",
-        "src/requests/models.py:699-720",
-        "src/requests/utils.py:511-519"
+        "src/requests/models.py:699-720"
       ],
       "unverified_citations": [],
-      "retrieval_seconds": 1.623,
-      "generation_seconds": 38.017
+      "retrieval_seconds": 0.275,
+      "generation_seconds": 22.189
     },
     {
       "question_id": "req-comp-2",
@@ -247,17 +244,16 @@
       "citation_coverage": 1.0,
       "hallucinated": false,
       "abstained": false,
-      "answer": "Authentication in Requests can be handled through various methods, including HTTP Basic Auth, netrc-based auth, Digest Auth, and OAuth. Each method has its own implementation or configuration.\n\n- **HTTP Basic Auth** is supported directly by Requests with a simple API. It can also be used via a shorthand tuple for convenience (`src/requests/auth.py:14-32`).\n\n- **netrc Authentication** allows authentication credentials to be stored in the user's netrc file, which can override HTTP auth headers set with `headers=`. This is enabled by default but can be disabled using the `trust_env` attribute of a session (`docs/user/authentication.rst:140-152`).\n\n- **Digest Authentication** is also supported out-of-the-box and works similarly to Basic Auth, providing an alternative method for HTTP authentication (`docs/user/authentication.rst:96-108`).\n\n- **OAuth 1 and OAuth 2** are handled by the `requests-oauthlib` library. This requires additional setup but provides a robust way to handle OAuth-based authentication flows (`docs/user/authentication.rst:135-147`).\n\nFor custom or more complex forms of authentication, developers can subclass `AuthBase` from `src/requests/auth.py:26-30`, implementing the `__call__` method to define their own logic.\n\nSources:\n- src/requests/auth.py:14-32\n- docs/user/authentication.rst:96-108\n- docs/user/authentication.rst:135-147\n\nCaveat: The specific implementation details of `AuthBase` subclassing are not provided in the given context, but it is mentioned that such custom authentication can be implemented by extending this class.",
+      "answer": "Authentication in Requests can be handled through various mechanisms, including HTTP Basic Auth, Digest Auth, OAuth 1, and OAuth 2/OpenID Connect. Additionally, users can implement custom authentication handlers.\n\n- **HTTP Basic Auth**: This is managed by classes like `HTTPBasicAuth` (Location: [1]). When a request is made with basic auth credentials provided as a tuple or through the `auth` argument, Requests automatically adds an appropriate authorization header to the request.\n\n    Sources:\n    - src/requests/auth.py:1-354\n\n- **Digest Auth**: The module also supports Digest Authentication via classes like `HTTPDigestAuth` (Location: [1]). This is used similarly to HTTP Basic Auth but with a different mechanism for handling authentication challenges.\n\n    Sources:\n    - src/requests/auth.py:1-354\n\n- **OAuth 1 and OAuth 2/OpenID Connect**: These are managed by the `requests-oauthlib` library, which can be imported separately (Location: [2]). For OAuth 1, you would use classes like `OAuth1`, while for OAuth 2, there are specific flows supported.\n\n    Sources:\n    - docs/user/authentication.rst:1-155\n\n- **Custom Authentication**: Users can implement their own authentication handlers by subclassing the `AuthBase` class (Location: [3]). This allows for flexibility in handling more complex or less common forms of authentication.\n\n    Sources:\n    - src/requests/auth.py:1-354\n    - docs/user/authentication.rst:118-155\n\n- **Automatic Authentication**: Requests can automatically use credentials from a user's netrc file if no explicit auth is provided (Location: [2]). This is handled by the `get_netrc_auth` function, which checks for authentication details in the specified locations.\n\n    Sources:\n    - docs/user/authentication.rst:1-155\n\n- **Authentication Handling During Redirection**: When a request is redirected, Requests intelligently manages authentication to avoid leaking credentials. The `rebuild_auth` method ensures that if an auth header needs to be stripped or reapplied during redirection (Location: [5]).\n\n    Sources:\n    - src/requests/sessions.py:309-332\n\nCaveat: While the documentation and code snippets provide a good overview, some details about specific implementations of custom authentication handlers are not included in this context.",
       "citations": [
-        "src/requests/auth.py:14-32",
-        "docs/user/authentication.rst:140-152",
-        "docs/user/authentication.rst:96-108",
-        "docs/user/authentication.rst:135-147",
-        "src/requests/auth.py:26-30"
+        "src/requests/auth.py:1-354",
+        "docs/user/authentication.rst:1-155",
+        "docs/user/authentication.rst:118-155",
+        "src/requests/sessions.py:309-332"
       ],
       "unverified_citations": [],
-      "retrieval_seconds": 0.936,
-      "generation_seconds": 29.844
+      "retrieval_seconds": 0.352,
+      "generation_seconds": 34.469
     },
     {
       "question_id": "req-comp-3",
@@ -288,14 +284,13 @@
       "citation_coverage": 1.0,
       "hallucinated": false,
       "abstained": false,
-      "answer": "The `Session` class in this codebase is designed to manage and persist settings across requests. It provides cookie persistence, connection pooling, and configuration options that can be shared between multiple requests.\n\nA `Session` object allows for maintaining stateful interactions with a server by storing cookies and other settings. Basic usage involves creating an instance of the `Session` class and using its methods to send HTTP requests. For example:\n\n- It can be used to persist cookies across different requests, as shown in the advanced usage section: `src/requests/sessions.py:1-920`.\n- It supports setting default headers or authentication credentials that are applied to all requests made through it.\n- It uses connection pooling from `urllib3` to reuse TCP connections for efficiency.\n\nSources:\n- src/requests/sessions.py:1-920\n- docs/user/advanced.rst:1-107\n\nCaveat: The exact implementation details of how cookies are managed and the internal workings of the session object are not detailed in this context, but it is clear that `Session` objects facilitate stateful interactions with web servers.",
+      "answer": "The `Session` class in the Requests library provides cookie persistence, connection-pooling, and configuration across requests. It allows for managing and persisting settings such as cookies, authentication, and proxies.\n\nSources:\n- src/requests/sessions.py:395-905\n\nCaveat: The provided context does not include detailed implementation of how the `Session` class manages these features beyond mentioning them in its docstring.",
       "citations": [
-        "src/requests/sessions.py:1-920",
-        "docs/user/advanced.rst:1-107"
+        "src/requests/sessions.py:395-905"
       ],
       "unverified_citations": [],
-      "retrieval_seconds": 0.416,
-      "generation_seconds": 25.595
+      "retrieval_seconds": 0.348,
+      "generation_seconds": 17.826
     },
     {
       "question_id": "req-rel-1",
@@ -325,19 +320,19 @@
       "mrr": 1.0,
       "relevant_file_rate": 1.0,
       "entity_coverage": 0.5,
-      "mention_coverage": 0.0,
+      "mention_coverage": 1.0,
       "citation_accuracy": 1.0,
       "citation_coverage": 1.0,
       "hallucinated": false,
       "abstained": true,
-      "answer": "I couldn't find enough evidence in the indexed repository to determine this.\n\nThe context provided does not contain any explicit inheritance relationships or direct references to classes that inherit from `BaseAdapter`. The only mention of `BaseAdapter` is its definition and usage within the `requests/sessions.py` file, where it is used as a type hint but no subclasses are shown. Therefore, based solely on the given context, I cannot identify any classes inheriting from `BaseAdapter`.\n\nSources:\n- src/requests/adapters.py:122-155\n- src/requests/sessions.py:870-881\n\nCaveat: The provided context does not include information about all classes in the repository, so this conclusion is based on the limited evidence available.",
+      "answer": "I couldn't find enough evidence in the indexed repository to determine this.\n\nThe context provides a definition for `BaseAdapter`, but does not show any class explicitly inheriting from it. The `adapters` module is mentioned, which contains `HTTPAdapter`, but no inheritance relationship is shown or implied between these classes and `BaseAdapter`. Therefore, based solely on the provided information, I cannot state which classes inherit from `BaseAdapter`.\n\nSources:\n- src/requests/adapters.py:122-155\n- src/requests/adapters.py:1-748",
       "citations": [
         "src/requests/adapters.py:122-155",
-        "src/requests/sessions.py:870-881"
+        "src/requests/adapters.py:1-748"
       ],
       "unverified_citations": [],
-      "retrieval_seconds": 0.364,
-      "generation_seconds": 13.57
+      "retrieval_seconds": 0.247,
+      "generation_seconds": 11.907
     },
     {
       "question_id": "req-rel-2",
@@ -372,13 +367,13 @@
       "citation_coverage": 1.0,
       "hallucinated": false,
       "abstained": false,
-      "answer": "The method `resolve_redirects` is called by the `Session.send` method. This can be inferred from the fact that `resolve_redirects` is used within the implementation of `send`, specifically in the case where `allow_redirects` is set to `False`.\n\nSources:\n- src/requests/sessions.py:279-307\n\nCaveat: The exact caller of `resolve_redirects` is not explicitly shown, but it is invoked internally by `Session.send`.",
+      "answer": "The method `resolve_redirects` is called by the `send` method of the `Session` class. This can be inferred from the fact that `resolve_redirects` is used within the implementation of `send`, as seen in its invocation with various parameters.\n\nSources:\n- src/requests/sessions.py:279-307\n\nCaveat: The exact location where `send` calls `resolve_redirects` is not provided in the context, but it can be inferred from the usage within `send`.",
       "citations": [
         "src/requests/sessions.py:279-307"
       ],
       "unverified_citations": [],
-      "retrieval_seconds": 0.166,
-      "generation_seconds": 18.57
+      "retrieval_seconds": 0.332,
+      "generation_seconds": 18.933
     },
     {
       "question_id": "req-rel-3",
@@ -407,17 +402,15 @@
       "relevant_file_rate": 1.0,
       "entity_coverage": 1.0,
       "mention_coverage": 0.0,
-      "citation_accuracy": 1.0,
+      "citation_accuracy": 0.0,
       "citation_coverage": 0.0,
       "hallucinated": false,
       "abstained": true,
-      "answer": "I couldn't find enough evidence in the indexed repository to determine this.\n\nThe provided context does not include any import statements or references from `src/requests/models.py` to other modules. The module documentation states that it contains primary objects for Requests but does not provide details on its imports.\n\nSources:\n- src/requests/models.py:1-1184",
-      "citations": [
-        "src/requests/models.py:1-1184"
-      ],
+      "answer": "I couldn't find enough evidence in the indexed repository to determine this.\n\nThe context provided does not include any import statements or references from `src/requests/models.py` to other modules. Therefore, based solely on the information given, it is not possible to identify what imports `src/requests/models.py`.",
+      "citations": [],
       "unverified_citations": [],
-      "retrieval_seconds": 0.341,
-      "generation_seconds": 9.053
+      "retrieval_seconds": 0.287,
+      "generation_seconds": 8.488
     },
     {
       "question_id": "req-flow-1",
@@ -447,20 +440,23 @@
       "mrr": 0.5,
       "relevant_file_rate": 1.0,
       "entity_coverage": 0.3333333333333333,
-      "mention_coverage": 1.0,
+      "mention_coverage": 0.0,
       "citation_accuracy": 1.0,
-      "citation_coverage": 1.0,
+      "citation_coverage": 0.5,
       "hallucinated": false,
       "abstained": false,
-      "answer": "When you call `requests.get`, it constructs a request and sends it to the server. The process involves several components working together.\n\nFirst, the `get` method in `src/requests/api.py:74-87` is called with the provided URL and optional parameters. This method sets the default value for `allow_redirects` to `True` and then calls the more general `request` method from `src/requests/sessions.py:557-647`.\n\nThe `request` method in `src/requests/sessions.py:557-647` is responsible for creating a `Request` object, preparing it by setting various attributes like headers and parameters, and then sending the prepared request. Specifically, line 655 of this file shows that when `get` is called, it internally calls `request(\"get\", url, params=params, **kwargs)`.\n\nThe `request` method constructs a `PreparedRequest` object by calling its constructor (defined in `src/requests/models.py:765-810`). This object holds the prepared state of the request, including headers, URL, and other relevant details. The `prepare` method of `PreparedRequest` is called to set up these attributes based on the provided parameters.\n\nFinally, this `PreparedRequest` is sent using the session's `send` method (not shown in the given context but implied by the flow), which handles the actual network request and returns a `Response` object containing the server\u2019s response.\n\nIn summary, calling `requests.get` initiates a series of steps to prepare and send an HTTP GET request, ultimately resulting in receiving a response from the server.",
+      "answer": "When you call `requests.get`, it constructs a request and sends it to the server. Here\u2019s how it works:\n\n1. **Initialization**: The `get` method is defined in `src/requests/sessions.py`. It takes a URL and optional parameters like `params`, and any additional keyword arguments (`kwargs`). By default, it sets `allow_redirects` to `True`.\n\n2. **Request Construction**: Inside the `get` method, it calls `self.request(\"GET\", url, params=params, **kwargs)`, where `self` is an instance of the `Session` class.\n\n3. **Sending Request**: The `request` method in `src/requests/sessions.py` handles the actual sending of the request. It prepares a `Request` object with the specified parameters and sends it using the `send` method, which ultimately calls into the underlying network layer to make the HTTP request.\n\n4. **Response Handling**: After sending the request, the response is returned as an instance of the `Response` class, encapsulating all the information from the server's response.\n\nThis process ensures that the `get` call is a high-level abstraction for making HTTP GET requests, handling common tasks like URL construction and parameter encoding automatically.\n\nHere\u2019s a simplified flow:\n- **Call**: `requests.get(url, params=params)`\n- **Session Method**: `self.request(\"GET\", url, params=params, **kwargs)`\n- **Preparation**: Prepare the request with necessary headers, parameters, etc.\n- **Sending**: Send the prepared request to the server.\n- **Response**: Return a response object containing the server's response.\n\nThis sequence is encapsulated within the `requests` library, making it easy for users to interact with HTTP servers without worrying about low-level details.\n\nSources (retrieved context for this answer):\n- src/requests/__init__.py:1-219\n- src/requests/sessions.py:648-653\n- src/requests/sessions.py:557-647\n- src/requests/sessions.py:655-671\n- src/requests/hooks.py:1-48\n- src/requests/sessions.py:684-693",
       "citations": [
-        "src/requests/api.py:74-87",
+        "src/requests/__init__.py:1-219",
+        "src/requests/sessions.py:648-653",
         "src/requests/sessions.py:557-647",
-        "src/requests/models.py:765-810"
+        "src/requests/sessions.py:655-671",
+        "src/requests/hooks.py:1-48",
+        "src/requests/sessions.py:684-693"
       ],
       "unverified_citations": [],
-      "retrieval_seconds": 0.2,
-      "generation_seconds": 33.942
+      "retrieval_seconds": 0.097,
+      "generation_seconds": 39.746
     },
     {
       "question_id": "req-flow-2",
@@ -495,7 +491,7 @@
       "citation_coverage": 1.0,
       "hallucinated": false,
       "abstained": false,
-      "answer": "A request gets prepared in several steps:\n\n1. A `Request` object is created with necessary parameters like method, URL, headers, data, etc.\n\n2. The `prepare_request` method of the `Session` class is called to prepare the request:\n   - It constructs a `PreparedRequest` instance.\n   - Merges settings from the Session and Request objects into the PreparedRequest.\n   - Sets cookies, authentication, hooks, and other parameters.\n\n3. The `prepare` method of the `PreparedRequest` class is then called to finalize the request:\n   - It sets the HTTP method, URL, headers, body, etc.\n   - Prepares any necessary content length information.\n   - Handles authentication if needed.\n\n4. The PreparedRequest is sent using the `send` method of an Adapter or Session instance:\n   - This handles network communication, including handling redirects and retries.\n   - It uses the urllib3 library to make the actual HTTP request.\n\n5. If there are any hooks registered (like for handling 401 responses), they are applied during the send process.\n\nThis preparation ensures that all necessary information is set up correctly before the actual HTTP request is made over the network.\n\nSources (retrieved context for this answer):\n- src/requests/sessions.py:511-555\n- src/requests/models.py:378-729\n- src/requests/models.py:892-894\n- src/requests/models.py:360-375\n- src/requests/adapters.py:737-748\n- src/requests/sessions.py:648-653",
+      "answer": "A request gets prepared in several steps:\n\n1. A `Request` object is created with necessary parameters like method, URL, headers, data, etc.\n\n2. The `prepare_request` method of the `Session` class is called to prepare the request:\n   - It constructs a `PreparedRequest` instance.\n   - Merges settings from the Session and Request objects into the PreparedRequest.\n   - Sets cookies, authentication, hooks, and other parameters.\n\n3. The `prepare` method of the `PreparedRequest` class is then called to finalize the request:\n   - It sets the HTTP method, URL, headers, body, etc.\n   - Prepares any necessary content length information.\n   - Handles authentication if needed.\n\n4. The PreparedRequest object is ready to be sent and can be used by calling its `prepare` method again or directly passed to the `send` method of a Session instance.\n\n5. When sending the request via `Session.send`, it handles network communication, including handling redirects, timeouts, SSL verification, etc., while using the prepared request data.\n\nSources (retrieved context for this answer):\n- src/requests/sessions.py:511-555\n- src/requests/models.py:378-729\n- src/requests/models.py:892-894\n- src/requests/models.py:360-375\n- src/requests/adapters.py:737-748\n- src/requests/sessions.py:648-653",
       "citations": [
         "src/requests/sessions.py:511-555",
         "src/requests/models.py:378-729",
@@ -505,8 +501,8 @@
         "src/requests/sessions.py:648-653"
       ],
       "unverified_citations": [],
-      "retrieval_seconds": 0.279,
-      "generation_seconds": 31.13
+      "retrieval_seconds": 0.288,
+      "generation_seconds": 31.314
     },
     {
       "question_id": "req-nav-1",
@@ -537,19 +533,17 @@
       "relevant_file_rate": 1.0,
       "entity_coverage": 0.0,
       "mention_coverage": 1.0,
-      "citation_accuracy": 0.5,
+      "citation_accuracy": 1.0,
       "citation_coverage": 1.0,
-      "hallucinated": true,
+      "hallucinated": false,
       "abstained": false,
-      "answer": "To add a new retry policy, you would typically modify the `max_retries` parameter when creating an instance of `requests.Session`. This is because the `max_retries` parameter controls how many times a request will be retried before raising an exception.\n\nHere's where it works:\n\n- In `src/requests/adapters.py:201-221`, the `__init__` method of `HTTPAdapter` sets up the retry policy. You can pass a custom `Retry` object or an integer to control retries.\n  - path/to/src/requests/adapters.py (line reference unverified)\n\nFor example, you could add a new retry policy like this:\n\n```python\nfrom urllib3.util import Retry\n\ns = requests.Session()\ns.mount(\"http://\", HTTPAdapter(max_retries=Retry(total=5, backoff_factor=0.1)))\n```\n\nThis sets up an adapter that will retry the request up to 5 times with a backoff factor of 0.1 seconds between retries.\n\nSources:\n- path/to/src/requests/adapters.py (line reference unverified)",
+      "answer": "To add a new retry policy, you would typically modify where `Retry` objects are created and configured in your request session or adapter. Specifically, this involves changing how `max_retries` is set when initializing an `HTTPAdapter`.\n\nSources:\n- src/requests/adapters.py:201-221\n\nFor example, if you wanted to add a custom retry policy with specific conditions (like retrying on 408 and 503 status codes), you would do something like this:\n\n```python\nfrom urllib3.util import Retry\n\ns = requests.Session()\ns.mount(\"http://\", HTTPAdapter(max_retries=Retry(total=2, status_forcelist=[408, 503])))\n```\n\nThis code snippet sets up an `HTTPAdapter` with a custom retry policy that retries on 408 (Request Timeout) and 503 (Service Unavailable) status codes. You can adjust the `status_forcelist` parameter to include any other HTTP status codes you want to retry on.\n\nCaveat: The exact location where this code would be added depends on your application's architecture, but it is commonly done in the initialization of a session or adapter instance.",
       "citations": [
         "src/requests/adapters.py:201-221"
       ],
-      "unverified_citations": [
-        "path/to/src/requests/adapters.py:201-221"
-      ],
-      "retrieval_seconds": 0.318,
-      "generation_seconds": 20.817
+      "unverified_citations": [],
+      "retrieval_seconds": 0.345,
+      "generation_seconds": 22.739
     },
     {
       "question_id": "req-repo-1",
@@ -594,8 +588,8 @@
         "docs/dev/contributing.rst:98-165"
       ],
       "unverified_citations": [],
-      "retrieval_seconds": 0.146,
-      "generation_seconds": 23.842
+      "retrieval_seconds": 0.314,
+      "generation_seconds": 25.084
     },
     {
       "question_id": "req-comp-1",
@@ -629,16 +623,18 @@
       "citation_coverage": 1.0,
       "hallucinated": false,
       "abstained": false,
-      "answer": "Cookie handling is primarily implemented in `src/requests/cookies.py`. This file defines a class `RequestsCookieJar` and several functions for managing cookies.\n\nThe `RequestsCookieJar` class (`src/requests/cookies.py:191-476`) contains methods like `set`, which allows setting cookie values, and other dictionary-like operations. The `create_cookie` function (`src/requests/cookies.py:494-528`) is used to generate a `Cookie` object from name-value pairs.\n\nThe `cookiejar_from_dict` function (`src/requests/cookies.py:579-601`) creates a `RequestsCookieJar` instance from a dictionary of key-value pairs, using the `create_cookie` function to populate it. Similarly, the `merge_cookies` function (`src/requests/cookies.py:604-625`) merges cookies into an existing `CookieJar`.\n\nThese functions and methods are interconnected through method calls and imports within the same file.\n\nSources:\n- src/requests/cookies.py:191-476\n- src/requests/cookies.py:494-528\n- src/requests/cookies.py:579-601\n- src/requests/cookies.py:604-625\n\nCaveat: The `cookiejar_from_dict` function is defined multiple times in the context, which might indicate a potential issue or redundancy.",
+      "answer": "Cookie handling is primarily implemented in `src/requests/cookies.py`. This file defines a class `RequestsCookieJar` and several functions for managing cookies.\n\nThe `RequestsCookieJar` class contains methods like `set`, which allows setting cookie values. It also includes other methods such as `get`, `iterkeys`, `keys`, etc., to interact with the stored cookies. The `create_cookie` function is used to generate a new cookie object from given parameters, and `cookiejar_from_dict` is utilized to create a `CookieJar` instance from a dictionary of key-value pairs.\n\nSources:\n- src/requests/cookies.py (src/requests/cookies.py)\n- src/requests/cookies.py (src/requests/cookies.py)\n\nSources (retrieved context for this answer):\n- src/requests/cookies.py:191-476\n- src/requests/cookies.py:579-601\n- src/requests/cookies.py:494-528\n- src/requests/models.py:699-720\n- src/requests/models.py:407-422\n- src/requests/cookies.py:531-557",
       "citations": [
         "src/requests/cookies.py:191-476",
-        "src/requests/cookies.py:494-528",
         "src/requests/cookies.py:579-601",
-        "src/requests/cookies.py:604-625"
+        "src/requests/cookies.py:494-528",
+        "src/requests/models.py:699-720",
+        "src/requests/models.py:407-422",
+        "src/requests/cookies.py:531-557"
       ],
       "unverified_citations": [],
-      "retrieval_seconds": 1.017,
-      "generation_seconds": 32.538
+      "retrieval_seconds": 0.767,
+      "generation_seconds": 26.672
     },
     {
       "question_id": "req-comp-2",
@@ -664,24 +660,22 @@
       "relevant_file_rate": 1.0,
       "entity_coverage": 0.0,
       "mention_coverage": 1.0,
-      "citation_accuracy": 0.8571428571428571,
+      "citation_accuracy": 1.0,
       "citation_coverage": 1.0,
-      "hallucinated": true,
+      "hallucinated": false,
       "abstained": false,
-      "answer": "Authentication in Requests can be handled through various methods, including HTTP Basic Auth, netrc-based auth, Digest Auth, and OAuth. Each method has its own implementation or configuration.\n\n- **HTTP Basic Auth** is supported directly by Requests with a simple API (`src/requests/auth.py:14-32`), allowing users to create an `HTTPBasicAuth` object and pass it as the `auth` parameter in requests.\n  \n  ```python\n  >>> from requests.auth import HTTPBasicAuth\n  >>> basic = HTTPBasicAuth('user', 'pass')\n  >>> requests.get('https://httpbin.org/basic-auth/user/pass', auth=basic)\n  <Response [200]>\n  ```\n\n- **netrc Authentication** is automatically handled by Requests if no `auth` argument is provided. It searches for credentials in the user's netrc file (`docs/user/authentication.rst:118-155`).\n\n- **Digest Auth** is also supported directly, with an example given in the documentation (`src/requests/auth.py:42-78`), where `HTTPDigestAuth` can be used similarly to `HTTPBasicAuth`.\n\n  ```python\n  >>> from requests.auth import HTTPDigestAuth\n  >>> url = 'https://httpbin.org/digest-auth/auth/user/pass'\n  >>> requests.get(url, auth=HTTPDigestAuth('user', 'pass'))\n  <Response [200]>\n  ```\n\n- **OAuth** is handled through the `requests-oauthlib` library (`docs/user/authentication.rst:145-155`), which can be used to make OAuth 1 and OAuth 2 authenticated requests.\n\n  ```python\n  >>> import requests\n  >>> from requests_oauthlib import OAuth1\n\n  >>> url = 'https://api.twitter.com/1.1/account/verify_credentials.json'\n  >>> auth = OAuth1('YOUR_APP_KEY', 'YOUR_APP_SECRET',\n  ...               'USER_OAUTH_TOKEN', 'USER_OAUTH_TOKEN_SECRET')\n\n  >>> requests.get(url, auth=auth)\n  <Response [200]>\n  ```\n\n- For more complex or less common authentication methods, users can implement their own by subclassing `AuthBase` and implementing the `__call__` method (`docs/user/authentication.rst:156-159`).\n\n    ```python\n    >>> import requests\n    >>> class MyAuth(requests.auth.AuthBase):\n    ...     def __call__(self, r):\n    ...         # Implement my authentication\n    ...         return r\n    ...\n    >>> url = 'https://httpbin.org/get'\n    >>> requests.get(url, auth=MyAuth())\n    <Response [200]>\n    ```\n\n- The `rebuild_auth` method in the requests/sessions.py (line reference unverified) file handles stripping and reappling authentication headers during redirects to avoid credential leakage.\n\nSources:\n- src/requests/auth.py:14-32\n- docs/user/authentication.rst:118-155\n- src/requests/auth.py:42-78\n- docs/user/authentication.rst:145-155\n- docs/user/authentication.rst:156-159\n- src/requests/sessions.py (line reference unverified)\n\nCaveat:\nThe documentation and examples provided cover the most common forms of authentication, but there may be additional or less common methods not explicitly covered.",
+      "answer": "Authentication in Requests can be handled through various methods, including HTTP Basic Auth, netrc-based auth, Digest Auth, and OAuth. Each method has its own implementation or configuration.\n\n- **HTTP Basic Auth**: This is managed by classes like `HTTPBasicAuth` (Location: src/requests/auth.py). When a request is made with authentication credentials provided as a tuple or through the `auth` parameter, Requests automatically adds an appropriate Authorization header to the request. For example:\n  ```python\n  >>> requests.get('https://httpbin.org/basic-auth/user/pass', auth=('user', 'pass'))\n  ```\n\n- **netrc Authentication**: This is handled by searching for credentials in a user's netrc file (Location: docs/user/authentication.rst). If the `trust_env` setting of the session is not disabled, Requests will attempt to use these credentials if they are found. The netrc file can be located at `~/.netrc`, `~/_netrc`, or as specified by the `NETRC` environment variable.\n\n- **Digest Auth**: This is supported through the `HTTPDigestAuth` class (Location: src/requests/auth.py). Similar to HTTP Basic Auth, it adds an appropriate Authorization header based on the provided credentials. For example:\n  ```python\n  >>> requests.get('https://httpbin.org/digest-auth/auth/user/pass', auth=HTTPDigestAuth('user', 'pass'))\n  ```\n\n- **OAuth**: This is managed by the `requests-oauthlib` library (Location: docs/user/authentication.rst). It allows for OAuth1 and OAuth2 authentication, which can be used with Requests through specific classes like `OAuth1`. For example:\n  ```python\n  >>> import requests\n  >>> from requests_oauthlib import OAuth1\n  >>> auth = OAuth1('YOUR_APP_KEY', 'YOUR_APP_SECRET',\n  ...               'USER_OAUTH_TOKEN', 'USER_OAUTH_TOKEN_SECRET')\n  >>> requests.get(url, auth=auth)\n  ```\n\n- **Custom Authentication**: Users can implement their own authentication schemes by subclassing `AuthBase` (Location: docs/user/authentication.rst). This allows for flexibility in handling more complex or less common forms of authentication.\n\nSources:\n- src/requests/auth.py\n- docs/user/authentication.rst\n\nCaveat: The context provided does not include the actual implementation details of how these classes and methods interact with each other, but it outlines their usage and purpose.\n\nSources (retrieved context for this answer):\n- src/requests/auth.py:1-354\n- docs/user/authentication.rst:1-117\n- docs/user/authentication.rst:118-155\n- src/requests/utils.py:1070-1084\n- src/requests/sessions.py:309-332\n- tests/test_requests.py:765-773",
       "citations": [
-        "src/requests/auth.py:14-32",
+        "src/requests/auth.py:1-354",
+        "docs/user/authentication.rst:1-117",
         "docs/user/authentication.rst:118-155",
-        "src/requests/auth.py:42-78",
-        "docs/user/authentication.rst:145-155",
-        "docs/user/authentication.rst:156-159",
-        "src/requests/sessions.py:309-332"
+        "src/requests/utils.py:1070-1084",
+        "src/requests/sessions.py:309-332",
+        "tests/test_requests.py:765-773"
       ],
-      "unverified_citations": [
-        "requests/sessions.py:309-332"
-      ],
-      "retrieval_seconds": 0.24,
-      "generation_seconds": 45.425
+      "unverified_citations": [],
+      "retrieval_seconds": 0.347,
+      "generation_seconds": 37.92
     },
     {
       "question_id": "req-comp-3",
@@ -712,14 +706,14 @@
       "citation_coverage": 1.0,
       "hallucinated": false,
       "abstained": false,
-      "answer": "The `Session` class in this codebase is designed to manage and persist settings across requests. It provides functionalities such as cookie persistence, connection pooling, and configuration management.\n\nA `Session` object can be used for several purposes:\n- **Cookie Persistence**: It allows cookies from previous requests to be reused in subsequent ones.\n- **Connection Pooling**: This feature reuses underlying TCP connections to make repeated requests to the same host more efficient.\n- **Configuration Management**: It can store and persist various settings that are common across multiple requests, such as authentication details or headers.\n\nThe `Session` class is instantiated with an optional parameter for handling redirects (`RedirectSession`). It includes methods like `prepare_request`, `request`, and others which handle the actual request process. The class also supports context management, allowing it to be used within a `with` statement to ensure resources are properly cleaned up after use.\n\nSources:\n- src/requests/sessions.py:395-905\n- tests/test_requests.py:2608-2638\n\nCaveat: The specific implementation details of how the session handles redirects and other advanced features are not detailed in this context, but it is implied that these functionalities are part of the `Session` class's capabilities.",
+      "answer": "The `Session` class in the Requests library provides cookie persistence, connection-pooling, and configuration to manage and persist settings across requests. It allows for reusing underlying TCP connections, which can result in performance improvements when making several requests to the same host.\n\nSources:\n- src/requests/sessions.py:395-905\n- docs/user/advanced.rst:1-107\n\nCaveat: The documentation and code snippet provide detailed information about the `Session` class, but they do not explicitly describe all its internal workings. However, it is clear that this class is designed to handle session-level configurations and state persistence across multiple requests.",
       "citations": [
         "src/requests/sessions.py:395-905",
-        "tests/test_requests.py:2608-2638"
+        "docs/user/advanced.rst:1-107"
       ],
       "unverified_citations": [],
-      "retrieval_seconds": 0.31,
-      "generation_seconds": 26.193
+      "retrieval_seconds": 0.374,
+      "generation_seconds": 21.697
     },
     {
       "question_id": "req-rel-1",
@@ -744,13 +738,13 @@
       "citation_coverage": 1.0,
       "hallucinated": false,
       "abstained": false,
-      "answer": "The class `HTTPAdapter` inherits from `BaseAdapter`.\n\nSources:\n- src/requests/adapters.py:158-748\n\nCaveat: The context provided does not list any other classes inheriting from `BaseAdapter`. Therefore, based on the available information, only `HTTPAdapter` is known to inherit from `BaseAdapter`.",
+      "answer": "The class `HTTPAdapter` inherits from `BaseAdapter`.\n\nSources:\n- src/requests/adapters.py:158-748",
       "citations": [
         "src/requests/adapters.py:158-748"
       ],
       "unverified_citations": [],
       "retrieval_seconds": 0.187,
-      "generation_seconds": 10.65
+      "generation_seconds": 8.822
     },
     {
       "question_id": "req-rel-2",
@@ -781,7 +775,7 @@
       "citation_coverage": 1.0,
       "hallucinated": false,
       "abstained": false,
-      "answer": "`resolve_redirects` is called by several methods and functions within the repository.\n\nA `resolve_redirects` call is made from:\n- The `send` method in `src/requests/sessions.py:132-132` and `src/requests/sessions.py:752-829`. These calls are part of handling HTTP requests, where a response might indicate a redirect.\n- Test functions in the test suite, specifically:\n  - `test_header_and_body_removal_on_redirect` at `tests/test_requests.py:320-335`\n  - `test_transfer_enc_removal_on_redirect` at `tests/test_requests.py:337-358`\n  - `test_cookielib_cookiejar_on_redirect` at `tests/test_requests.py:450-480`\n  - `test_manual_redirect_with_partial_body_read` at `tests/test_requests.py:1988-2005`\n  - `test_requests_are_updated_each_time` at `tests/test_requests.py:2649-2667`\n\nThese calls are used to handle and follow redirects during HTTP requests, ensuring that the session correctly processes each step of a redirect chain.\n\nSources:\n- src/requests/sessions.py:132-132\n- src/requests/sessions.py:752-829\n- tests/test_requests.py:320-335\n- tests/test_requests.py:337-358\n- tests/test_requests.py:450-480\n- tests/test_requests.py:1988-2005\n- tests/test_requests.py:2649-2667\n\nCaveat: The calls from the test functions are part of testing the `resolve_redirects` functionality and may not represent actual production usage.",
+      "answer": "`resolve_redirects` is called by several methods and functions within the codebase. Specifically:\n\n- The `send` method in `src/requests/sessions.py` (line 132) calls `resolve_redirects`.\n- Another instance of `send` in `src/requests/sessions.py` (lines 752-829) also calls `resolve_redirects`.\n- Various test functions such as `test_header_and_body_removal_on_redirect`, `test_transfer_enc_removal_on_redirect`, `test_cookielib_cookiejar_on_redirect`, and `test_manual_redirect_with_partial_body_read` in `tests/test_requests.py` call `resolve_redirects`.\n- The function `test_requests_are_updated_each_time` also calls `resolve_redirects`.\n\nSources:\n- src/requests/sessions.py:132-132\n- src/requests/sessions.py:752-829\n- tests/test_requests.py:320-335\n- tests/test_requests.py:337-358\n- tests/test_requests.py:450-480\n- tests/test_requests.py:1988-2005\n- tests/test_requests.py:2649-2667",
       "citations": [
         "src/requests/sessions.py:132-132",
         "src/requests/sessions.py:752-829",
@@ -792,8 +786,8 @@
         "tests/test_requests.py:2649-2667"
       ],
       "unverified_citations": [],
-      "retrieval_seconds": 0.108,
-      "generation_seconds": 35.091
+      "retrieval_seconds": 0.094,
+      "generation_seconds": 30.723
     },
     {
       "question_id": "req-rel-3",
@@ -823,23 +817,19 @@
       "mrr": 0.3333333333333333,
       "relevant_file_rate": 1.0,
       "entity_coverage": 1.0,
-      "mention_coverage": 1.0,
+      "mention_coverage": 0.0,
       "citation_accuracy": 1.0,
-      "citation_coverage": 0.5,
+      "citation_coverage": 0.0,
       "hallucinated": false,
       "abstained": false,
-      "answer": "src/requests/__init__.py and several other files import src/requests/models.py.\n\nSpecifically:\n- src/requests/__init__.py imports this file.\n- src/requests/_types.py also imports this file. \n\nThese are the only two files in the provided context that import src/requests/models.py.\n\nSources (retrieved context for this answer):\n- src/requests/models.py:1-1184\n- src/requests/api.py:1-180\n- src/requests/sessions.py:395-905\n- src/requests/structures.py:20-93\n- src/requests/structures.py:96-130\n- tests/testserver/server.py:25-135",
+      "answer": "src/requests/__init__.py, src/requests/_types.py, and several other files import src/requests/models.py.\n\nSources:\n- src/requests/__init__.py:1-20 (Location [11])\n- src/requests/_types.py:1-15 (Location [12])",
       "citations": [
-        "src/requests/models.py:1-1184",
-        "src/requests/api.py:1-180",
-        "src/requests/sessions.py:395-905",
-        "src/requests/structures.py:20-93",
-        "src/requests/structures.py:96-130",
-        "tests/testserver/server.py:25-135"
+        "src/requests/__init__.py:1-20",
+        "src/requests/_types.py:1-15"
       ],
       "unverified_citations": [],
-      "retrieval_seconds": 0.769,
-      "generation_seconds": 21.1
+      "retrieval_seconds": 0.573,
+      "generation_seconds": 28.732
     },
     {
       "question_id": "req-flow-1",
@@ -874,7 +864,7 @@
       "citation_coverage": 1.0,
       "hallucinated": false,
       "abstained": false,
-      "answer": "When you call `requests.get()`, it initiates a GET request to the specified URL. This method internally creates and sends a `Request` object to the server, which is then prepared by merging settings from the `Session` instance (if used) with any provided parameters. The request is sent through an appropriate adapter based on the URL's scheme (e.g., HTTP or HTTPS), and the response from the server is received and returned as a `Response` object. This process allows for cookie persistence, connection pooling, and other session-related configurations to be applied consistently across multiple requests.\n\nSources (retrieved context for this answer):\n- src/requests/api.py:74-87\n- src/requests/sessions.py:655-671\n- src/requests/cookies.py:211-227\n- src/requests/structures.py:129-130\n- src/requests/api.py:24-71\n- src/requests/cookies.py:423-452",
+      "answer": "When you call `requests.get()`, it initiates a GET request to the specified URL. This method internally creates and sends a `Request` object to the server, which is then prepared by merging settings from both the global configuration and any session-specific configurations (like headers, cookies, and authentication). The request is then sent through an appropriate adapter based on the URL's scheme (HTTP or HTTPS), and the response from the server is processed. If a session is used, it maintains cookie persistence across requests and can handle redirects according to its configured settings.\n\nSources (retrieved context for this answer):\n- src/requests/api.py:74-87\n- src/requests/sessions.py:655-671\n- src/requests/cookies.py:211-227\n- src/requests/structures.py:129-130\n- src/requests/api.py:24-71\n- src/requests/cookies.py:423-452",
       "citations": [
         "src/requests/api.py:74-87",
         "src/requests/sessions.py:655-671",
@@ -884,8 +874,8 @@
         "src/requests/cookies.py:423-452"
       ],
       "unverified_citations": [],
-      "retrieval_seconds": 0.975,
-      "generation_seconds": 25.754
+      "retrieval_seconds": 0.776,
+      "generation_seconds": 40.395
     },
     {
       "question_id": "req-flow-2",
@@ -920,7 +910,7 @@
       "citation_coverage": 1.0,
       "hallucinated": false,
       "abstained": false,
-      "answer": "A request gets prepared in several steps:\n\n1. **Request Initialization**: A `Request` object is created with details like method (`GET`, `POST`, etc.), URL, headers, data, and other parameters.\n\n2. **Preparation of Request**: The `prepare_request` method in the `Session` class constructs a `PreparedRequest` from the `Request`. This involves setting up various attributes such as cookies, headers, authentication details, and more.\n\n3. **Environment Settings**: The session merges its settings with those provided by the request to ensure consistent behavior across requests.\n\n4. **Sending the Request**: Once prepared, the request is sent using the `send` method of an adapter or session. This involves handling network connections, timeouts, redirects, and other low-level details.\n\n5. **Handling Responses**: Hooks are registered for response processing, allowing custom actions to be taken on successful responses or errors.\n\nThis process ensures that each request is properly configured before being sent over the network, taking into account both user-defined settings and default behaviors of the `requests` library.\n\nSources (retrieved context for this answer):\n- src/requests/sessions.py:511-555\n- src/requests/models.py:378-729\n- src/requests/models.py:892-894\n- src/requests/models.py:360-375\n- src/requests/adapters.py:737-748\n- src/requests/sessions.py:648-653",
+      "answer": "A request gets prepared in several steps:\n\n1. A `Request` object is created with necessary parameters like method, URL, headers, data, etc.\n\n2. The `prepare_request` method of the `Session` class is called on this Request object to prepare it for transmission. This involves setting up cookies, headers, authentication, and other settings from both the Request and Session objects.\n\n3. A `PreparedRequest` instance is created and populated with the necessary details like URL, method, headers, data, etc., by calling its `prepare` method.\n\n4. The `send` method of an `Adapter` (like HTTPAdapter) is then called to actually send the prepared request over a network connection using the underlying urllib3 library.\n\n5. During preparation, various hooks can be registered and executed, such as handling redirects or authentication challenges.\n\n6. Finally, the fully prepared request is sent via the appropriate adapter's `urlopen` method, which handles the actual network communication.\n\nThis process ensures that all necessary information for making a proper HTTP request is correctly set up before it is sent over the network.\n\nSources (retrieved context for this answer):\n- src/requests/sessions.py:511-555\n- src/requests/models.py:378-729\n- src/requests/models.py:892-894\n- src/requests/models.py:360-375\n- src/requests/adapters.py:737-748\n- src/requests/sessions.py:648-653",
       "citations": [
         "src/requests/sessions.py:511-555",
         "src/requests/models.py:378-729",
@@ -930,8 +920,8 @@
         "src/requests/sessions.py:648-653"
       ],
       "unverified_citations": [],
-      "retrieval_seconds": 0.207,
-      "generation_seconds": 29.637
+      "retrieval_seconds": 0.58,
+      "generation_seconds": 34.093
     },
     {
       "question_id": "req-nav-1",
@@ -961,20 +951,20 @@
       "mrr": 1.0,
       "relevant_file_rate": 1.0,
       "entity_coverage": 0.0,
-      "mention_coverage": 1.0,
-      "citation_accuracy": 0.5,
+      "mention_coverage": 0.0,
+      "citation_accuracy": 1.0,
       "citation_coverage": 0.0,
-      "hallucinated": true,
+      "hallucinated": false,
       "abstained": false,
-      "answer": "To add a new retry policy, you would typically need to modify the `Retry` class or related classes and methods that handle retries. The `RetryError` class is defined in `src/requests/exceptions.py`, but it inherits from `RequestException`. A new retry policy might be implemented by extending or modifying the behavior of the retry logic within the session handling.\n\nThe `mount` method in `src/requests/sessions.py` registers connection adapters to prefixes, which could potentially involve retry policies. However, the specific implementation details for retries are not directly visible from this method alone.\n\nHere is a more detailed explanation:\n\nTo add a new retry policy:\n1. You might need to extend or modify the `Retry` class in `src/requests/adapters.py`, as it contains logic related to handling retries.\n2. Alternatively, you could implement a custom retry strategy and integrate it into the session's retry mechanism.\n\nSources:\n- src/requests/adapters.py (line reference unverified)\n- src/requests/sessions.py:888-897\n\nCaveat: The exact location of where to add a new retry policy depends on the specific requirements, but typically involves modifying or extending classes and methods related to retries.",
+      "answer": "To add a new retry policy, you would typically modify the `RetryError` class or its subclasses, as this is where retry logic is likely defined. Additionally, changes might be needed in how retries are handled within session management.\n\nSources:\n- src/requests/exceptions.py (Location: src/requests/exceptions.py)\n\nThe `RetryError` class inherits from `RequestException`, which itself inherits from `IOError`. This hierarchy suggests that any retry policy would likely be implemented or extended within the `RetryError` class. You could define new methods or attributes in this class to handle specific retry conditions.\n\nFurthermore, you might need to update how retries are managed in session handling. The `mount` method in `src/requests/sessions.py` is involved in registering connection adapters and managing prefixes, which indirectly relates to how retries are handled.\n\nCaveat: The context does not provide explicit details on the implementation of retry policies or where they might be used within the codebase. Therefore, additional exploration of related functions and classes would be necessary to fully understand the impact of changes to retry logic.\n\nSources (retrieved context for this answer):\n- src/requests/exceptions.py:20-35\n- src/requests/sessions.py:888-897\n- tests/conftest.py:35-36",
       "citations": [
-        "src/requests/sessions.py:888-897"
+        "src/requests/exceptions.py:20-35",
+        "src/requests/sessions.py:888-897",
+        "tests/conftest.py:35-36"
       ],
-      "unverified_citations": [
-        "src/requests/adapters.py:14-32"
-      ],
-      "retrieval_seconds": 0.259,
-      "generation_seconds": 18.814
+      "unverified_citations": [],
+      "retrieval_seconds": 1.1,
+      "generation_seconds": 19.023
     }
   ]
 }

@@ -18,6 +18,10 @@ dependencies = [
     "sentence-transformers>=2.2.0",
     "gitpython>=3.1.0",
     "httpx>=0.25.0",
+    # Structural parsing for languages without an stdlib AST module.
+    "tree-sitter>=0.21.0",
+    "tree-sitter-javascript>=0.21.0",
+    "tree-sitter-typescript>=0.21.0",
 ]
 
 [project.optional-dependencies]

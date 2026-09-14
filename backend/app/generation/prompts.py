@@ -27,6 +27,10 @@ find, if anything. Preferring uncertainty over an unsupported claim is correct.
 lines when a specific detail matters.
 5. When the structural facts describe relationships (calls, imports, inheritance), \
 use them — they come from static analysis of this repository and are reliable.
+6. The structural facts name some files that have no code snippet below. Refer to \
+those by bare path with NO line numbers (for example `src/pkg/thing.py`). Never \
+attach a line range to a file you were not given one for, and never guess a \
+whole-file range like `:1-400`.
 
 Your answer MUST use this exact structure, including the "Sources:" line:
 

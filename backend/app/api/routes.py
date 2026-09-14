@@ -29,6 +29,9 @@ from backend.app.api.schemas import (
     GraphOverview,
     GraphOverviewFile,
     HealthResponse,
+    NetworkEdge,
+    NetworkNode,
+    NetworkResponse,
     OverviewResponse,
     QueryRequest,
     QueryResponse,
@@ -288,6 +291,58 @@ async def graph_overview(repo_id: str):
         central_files=graph_store.get_central_files(repo_id, limit=10),
         entry_points=graph_store.get_entry_points(repo_id, limit=10),
     )
+
+
+@router.get("/repositories/{repo_id}/graph/network", response_model=NetworkResponse)
+async def graph_network(
+    repo_id: str,
+    scope: str = Query("files", pattern="^(files|calls)$"),
+    focus: str | None = Query(None, min_length=1, max_length=200),
+    depth: int = Query(2, ge=1, le=3),
+    limit: int = Query(150, ge=10, le=500),
+):
+    """Nodes and edges for the graph visualisation.
+
+    ``scope=files`` returns the repository's import graph; ``scope=calls``
+    returns the call graph around ``focus``.
+    """
+    _require_ready(repo_id)
+    graph_store = get_graph_store()
+
+    if scope == "calls":
+        if not focus:
+            raise HTTPException(status_code=400, detail="scope=calls requires focus")
+        data = graph_store.get_call_network(repo_id, focus, depth=depth, limit=limit)
+    else:
+        data = graph_store.get_file_network(repo_id, limit=limit)
+
+    return NetworkResponse(
+        scope=data["scope"],
+        focus=data.get("focus"),
+        nodes=[
+            NetworkNode(
+                id=node["id"],
+                label=node.get("label") or _basename(node["id"]),
+                language=node.get("language"),
+                file_path=node.get("file_path") or node["id"],
+                entity_type=node.get("entity_type"),
+                start_line=node.get("start_line") or 0,
+                end_line=node.get("end_line") or 0,
+                imports=node.get("imports") or 0,
+                importers=node.get("importers") or 0,
+                definitions=node.get("definitions") or 0,
+                focus=bool(node.get("focus")),
+            )
+            for node in data["nodes"]
+        ],
+        edges=[NetworkEdge(source=e["source"], target=e["target"]) for e in data["edges"]],
+        total_nodes=data["total_nodes"],
+        truncated=data["truncated"],
+    )
+
+
+def _basename(path: str) -> str:
+    return path.rsplit("/", 1)[-1]
 
 
 @router.get("/repositories/{repo_id}/graph/file", response_model=GraphFileContents)

@@ -15,9 +15,10 @@ dist/
 .env
 .env.local
 
-# IDE
+# IDE / local tooling
 .vscode/
 .idea/
+.claude/settings.local.json
 *.swp
 *.swo
 

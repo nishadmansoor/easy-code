@@ -393,6 +393,129 @@ class GraphStore:
             file_path=file_path,
         )
 
+    def get_file_network(self, repository_id: str, limit: int = 150) -> dict:
+        """The file-level import graph, for visualisation.
+
+        Files are ranked by degree so that a repository too large to draw is
+        reduced to its most connected core rather than truncated arbitrarily.
+        Isolated files (no imports either way) are excluded — they carry no
+        information in a node-link diagram.
+        """
+        nodes = self._read(
+            """
+            MATCH (f:File {repository_id: $repo_id})
+            OPTIONAL MATCH (f)-[:FILE_IMPORTS_FILE]->(out:File {repository_id: $repo_id})
+            OPTIONAL MATCH (inc:File {repository_id: $repo_id})-[:FILE_IMPORTS_FILE]->(f)
+            OPTIONAL MATCH (f)-[:FILE_DEFINES_CLASS|FILE_DEFINES_FUNCTION]->(d)
+            WITH f,
+                 count(DISTINCT out) AS imports,
+                 count(DISTINCT inc) AS importers,
+                 count(DISTINCT d) AS definitions
+            WHERE imports > 0 OR importers > 0
+            RETURN f.file_path AS id,
+                   f.language AS language,
+                   imports, importers, definitions
+            ORDER BY importers + imports DESC, id
+            LIMIT $limit
+            """,
+            repo_id=repository_id,
+            limit=limit,
+        )
+
+        total = self._read(
+            """
+            MATCH (f:File {repository_id: $repo_id})
+            WHERE (f)-[:FILE_IMPORTS_FILE]-(:File {repository_id: $repo_id})
+            RETURN count(DISTINCT f) AS total
+            """,
+            repo_id=repository_id,
+        )
+        total_nodes = total[0]["total"] if total else len(nodes)
+
+        paths = [node["id"] for node in nodes]
+        edges = (
+            self._read(
+                """
+                MATCH (a:File {repository_id: $repo_id})
+                      -[:FILE_IMPORTS_FILE]->(b:File {repository_id: $repo_id})
+                WHERE a.file_path IN $paths AND b.file_path IN $paths
+                RETURN DISTINCT a.file_path AS source, b.file_path AS target
+                """,
+                repo_id=repository_id,
+                paths=paths,
+            )
+            if paths
+            else []
+        )
+
+        return {
+            "scope": "files",
+            "nodes": nodes,
+            "edges": edges,
+            "total_nodes": total_nodes,
+            "truncated": total_nodes > len(nodes),
+        }
+
+    def get_call_network(
+        self, repository_id: str, name: str, depth: int = 2, limit: int = 200
+    ) -> dict:
+        """The call graph around one function or method, in both directions."""
+        depth = max(1, min(int(depth), 3))
+        rows = self._read(
+            f"""
+            MATCH (start {{repository_id: $repo_id, name: $name}})
+            WHERE start.node_type IN ['Function', 'Method']
+            MATCH path = (start)
+                  -[:FUNCTION_CALLS_FUNCTION|METHOD_CALLS_METHOD*1..{depth}]-(other)
+            WHERE other.repository_id = $repo_id
+            UNWIND relationships(path) AS r
+            WITH DISTINCT startNode(r) AS a, endNode(r) AS b
+            RETURN a.name AS source_name, a.file_path AS source_file,
+                   a.node_type AS source_type, a.start_line AS source_start,
+                   a.end_line AS source_end,
+                   b.name AS target_name, b.file_path AS target_file,
+                   b.node_type AS target_type, b.start_line AS target_start,
+                   b.end_line AS target_end
+            LIMIT $limit
+            """,
+            repo_id=repository_id,
+            name=name,
+            limit=limit,
+        )
+
+        nodes: dict[str, dict] = {}
+        edges: list[dict] = []
+        for row in rows:
+            for side in ("source", "target"):
+                key = f"{row[f'{side}_file']}::{row[f'{side}_name']}"
+                nodes.setdefault(
+                    key,
+                    {
+                        "id": key,
+                        "label": row[f"{side}_name"],
+                        "file_path": row[f"{side}_file"],
+                        "entity_type": (row[f"{side}_type"] or "").lower(),
+                        "start_line": row[f"{side}_start"] or 0,
+                        "end_line": row[f"{side}_end"] or 0,
+                        "focus": row[f"{side}_name"] == name,
+                    },
+                )
+            edges.append(
+                {
+                    "source": f"{row['source_file']}::{row['source_name']}",
+                    "target": f"{row['target_file']}::{row['target_name']}",
+                }
+            )
+
+        return {
+            "scope": "calls",
+            "focus": name,
+            "nodes": list(nodes.values()),
+            "edges": edges,
+            "total_nodes": len(nodes),
+            "truncated": len(rows) >= limit,
+        }
+
     def find_entities(self, repository_id: str, name: str, limit: int = 10) -> list[dict]:
         """Exact-name lookup across classes, functions and methods."""
         return self._read(
