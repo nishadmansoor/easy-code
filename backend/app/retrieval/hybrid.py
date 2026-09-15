@@ -1,6 +1,6 @@
 """Hybrid retrieval: semantic search plus structural graph traversal.
 
-Pipeline (AGENT.md §18):
+Pipeline:
 
     question -> analysis -> {Qdrant, Neo4j} -> ranking -> dedup -> context
 

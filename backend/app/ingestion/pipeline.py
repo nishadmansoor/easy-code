@@ -1,7 +1,7 @@
 """End-to-end indexing pipeline.
 
-Runs the fourteen steps from AGENT.md §7 and records the status at each stage
-so a caller can poll progress. Any failure marks the repository ``failed`` with
+Runs clone, parse, embed, graph and summarise in order, recording the status
+at each stage so a caller can poll progress. Any failure marks the repository ``failed`` with
 the reason instead of leaving it stuck mid-flight.
 """
 

@@ -17,7 +17,7 @@ class Source(StrEnum):
     BOTH = "both"
 
 
-#: Priority tiers from AGENT.md §19, highest first.
+#: Priority tiers, highest first.
 TIER_DIRECT = 0  # the entity the question names, or a top semantic match
 TIER_RELATED = 1  # callers, callees, subclasses of a direct hit
 TIER_DEPENDENCY = 2  # imports and importers
