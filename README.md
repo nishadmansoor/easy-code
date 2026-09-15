@@ -1,6 +1,6 @@
 # Easy Code
 
-An AI-powered codebase understanding platform. Paste a GitHub repository URL and get grounded explanations about the code.
+A platform to help users understand complex repositories. Paste a GitHub repository URL and get grounded explanations about the code.
 
 You give it a GitHub URL. It clones the repo, parses the source with AST and tree-sitter, extracts classes/functions/methods/imports/calls, chunks them into semantic units, and stores everything in Qdrant (vectors) and Neo4j (graph). You then ask questions in plain English and get an explanation back, with file paths and line numbers you can click through to the source.
 
