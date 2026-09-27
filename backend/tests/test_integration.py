@@ -51,8 +51,12 @@ def vector_store(parsed):
 
 @pytest.fixture(scope="module")
 def graph_store(parsed):
+    # The Neo4j driver connects lazily, so constructing a GraphStore succeeds
+    # even when the server is down. Run a trivial query to prove the connection
+    # before yielding, otherwise every test errors instead of skipping.
     try:
         store = GraphStore()
+        store.run_cypher("RETURN 1 AS ok")
     except Exception as exc:
         pytest.skip(f"Neo4j is not available: {exc}")
 
@@ -166,14 +170,13 @@ class TestGraphStore:
         central = graph_store.get_central_files(REPO_ID, limit=5)
         assert central and central[0]["importers"] >= 1
 
-    def test_clear_repository_removes_everything(self, parsed):
-        store = GraphStore()
+    def test_clear_repository_removes_everything(self, graph_store, parsed):
+        # Uses a separate repository id so it cannot disturb the module fixture.
         temporary_id = "pytest-clear"
-        build_code_graph(temporary_id, "https://example.invalid/x", parsed, store)
-        assert store.get_statistics(temporary_id)["node_count"] > 0
-        store.clear_repository(temporary_id)
-        assert store.get_statistics(temporary_id)["node_count"] == 0
-        store.close()
+        build_code_graph(temporary_id, "https://example.invalid/x", parsed, graph_store)
+        assert graph_store.get_statistics(temporary_id)["node_count"] > 0
+        graph_store.clear_repository(temporary_id)
+        assert graph_store.get_statistics(temporary_id)["node_count"] == 0
 
 
 class TestHybridRetrieval:
