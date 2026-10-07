@@ -14,6 +14,7 @@ from pathlib import Path
 from backend.app.chunking.semantic import build_chunks
 from backend.app.config.settings import settings
 from backend.app.generation.overview import generate_overview
+from backend.app.graph import build_graph_store
 from backend.app.graph.builder import build_code_graph
 from backend.app.graph.store import GraphStore
 from backend.app.ingestion.repository import (
@@ -104,7 +105,7 @@ def index_repository(
         store.update(repository_id, chunk_count=chunk_count)
 
         store.set_status(repository_id, RepositoryStatus.BUILDING_GRAPH)
-        graph_store = graph_store or GraphStore()
+        graph_store = graph_store or build_graph_store()
         file_rows = [
             {
                 "file_path": relative_path(path, repo_path),
@@ -183,7 +184,7 @@ def delete_repository(
 
     own_graph = graph_store is None
     try:
-        graph_store = graph_store or GraphStore()
+        graph_store = graph_store or build_graph_store()
         graph_store.clear_repository(repository_id)
     except Exception:
         logger.exception("Failed to clear graph for %s", repository_id)

@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from backend.app.generation.answer import generate_answer  # noqa: E402
-from backend.app.graph.store import GraphStore  # noqa: E402
+from backend.app.graph import build_graph_store  # noqa: E402
 from backend.app.ingestion.pipeline import (  # noqa: E402
     index_repository,
     register_repository,
@@ -77,7 +77,7 @@ def main() -> int:
         return 0
 
     vector_store = VectorStore()
-    graph_store = GraphStore()
+    graph_store = build_graph_store()
     try:
         for question in args.ask:
             context = retrieve_hybrid(

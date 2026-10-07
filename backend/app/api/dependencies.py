@@ -8,7 +8,7 @@ the API can start (and report its health) even when a backing service is down.
 import logging
 import threading
 
-from backend.app.graph.store import GraphStore
+from backend.app.graph import build_graph_store
 from backend.app.storage.database import RepositoryStore, get_repository_store
 from backend.app.vector.store import VectorStore
 
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 _lock = threading.Lock()
 _vector_store: VectorStore | None = None
-_graph_store: GraphStore | None = None
+_graph_store = None
 
 
 def get_vector_store() -> VectorStore:
@@ -27,11 +27,11 @@ def get_vector_store() -> VectorStore:
         return _vector_store
 
 
-def get_graph_store() -> GraphStore:
+def get_graph_store():
     global _graph_store
     with _lock:
         if _graph_store is None:
-            _graph_store = GraphStore()
+            _graph_store = build_graph_store()
         return _graph_store
 
 
@@ -62,7 +62,7 @@ def service_health() -> tuple[bool, bool]:
     except Exception:
         logger.debug("Qdrant health check failed", exc_info=True)
     try:
-        get_graph_store().run_cypher("RETURN 1 AS ok")
+        get_graph_store().ping()
         neo4j_ok = True
     except Exception:
         logger.debug("Neo4j health check failed", exc_info=True)

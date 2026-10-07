@@ -118,6 +118,25 @@ entity_name | line range`. Re-indexing overwrites rather than duplicating, and
 two repositories can never collide. Payload indexes on `repository_id`,
 `language`, `entity_type` and `file_path` make filtered search cheap.
 
+## Storage modes
+
+Both indexes have two interchangeable backends, chosen by `STORAGE_MODE`.
+
+**`server`** (the default) uses Qdrant and Neo4j over the network, which is
+what `docker compose` starts.
+
+**`embedded`** needs no services at all. Qdrant's Python client runs the vector
+index in-process from a local directory, and the code graph becomes one JSON
+file per repository (`backend/app/graph/embedded_store.py`), queried with plain
+dicts and `networkx` for shortest paths. Nothing above the store layer knows
+which backend is in use, and the same integration suite passes against both.
+
+Two constraints come with embedded mode. Embedded Qdrant locks its storage
+directory to a single client, so the client is a process-wide singleton and the
+API must run one worker. And every graph query is a scan over in-memory lists —
+microseconds for a 1,000-file repository, the wrong choice for a 100,000-file
+one.
+
 ## Structural index (Neo4j)
 
 Nodes: `Repository`, `File`, `Class`, `Function`, `Method`.

@@ -10,8 +10,8 @@ import pytest
 
 from backend.app.chunking.semantic import build_chunks
 from backend.app.embeddings.model import HashingEmbeddingModel
+from backend.app.graph import build_graph_store
 from backend.app.graph.builder import build_code_graph
-from backend.app.graph.store import GraphStore
 from backend.app.retrieval.hybrid import retrieve_hybrid, retrieve_vector_only
 from backend.app.vector.store import VectorStore
 
@@ -55,8 +55,8 @@ def graph_store(parsed):
     # even when the server is down. Run a trivial query to prove the connection
     # before yielding, otherwise every test errors instead of skipping.
     try:
-        store = GraphStore()
-        store.run_cypher("RETURN 1 AS ok")
+        store = build_graph_store()
+        store.ping()
     except Exception as exc:
         pytest.skip(f"Neo4j is not available: {exc}")
 

@@ -22,14 +22,27 @@ Ask "What calls `resolve_redirects`?" and it answers from the graph instead of g
 
 ## Quick start
 
+No databases to install and nothing to run alongside it:
+
 ```bash
-cp .env.example .env
-docker compose up -d qdrant neo4j
 pip install -e ".[dev]"
-uvicorn backend.app.api.main:app --reload
+STORAGE_MODE=embedded uvicorn backend.app.api.main:app
 ```
 
 Open <http://localhost:8000>, paste a repository URL, wait for indexing, then ask questions.
+
+Embedded mode runs Qdrant in-process from a local directory and keeps the code
+graph as a JSON file per repository, so there is no Docker and no server to
+manage. It locks its storage to one process, so run a single worker. For larger
+repositories, or to run more than one worker, use the real databases instead:
+
+```bash
+cp .env.example .env
+docker compose up -d qdrant neo4j
+uvicorn backend.app.api.main:app --reload
+```
+
+Both modes behave identically — the same test suite passes against each.
 
 For written explanations rather than a bare list of matching locations, run a local model:
 

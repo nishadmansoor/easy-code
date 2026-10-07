@@ -33,6 +33,11 @@ class GraphStore:
     def close(self) -> None:
         self.driver.close()
 
+    def ping(self) -> bool:
+        """Prove the backend is reachable. Raises when it is not."""
+        self._read("RETURN 1 AS ok")
+        return True
+
     def ensure_schema(self) -> None:
         with self.driver.session() as session:
             for statement in CONSTRAINTS:

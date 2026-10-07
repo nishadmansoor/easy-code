@@ -4,15 +4,26 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    # Backend selection. "embedded" needs no servers at all: Qdrant runs from a
+    # local directory and the code graph is a JSON file per repository. "server"
+    # uses Qdrant and Neo4j over the network.
+    storage_mode: str = "server"
+
     # Vector store
     qdrant_host: str = "localhost"
     qdrant_port: int = 6333
     qdrant_collection: str = "easycode_chunks"
+    qdrant_path: Path = Path("./data/qdrant")
 
     # Graph store
     neo4j_uri: str = "bolt://localhost:7687"
     neo4j_user: str = "neo4j"
     neo4j_password: str = "easycode"
+    graph_dir: Path = Path("./data/graph")
+
+    @property
+    def embedded(self) -> bool:
+        return self.storage_mode.lower() == "embedded"
 
     # Application metadata database (SQLite by default, PostgreSQL supported)
     database_url: str = "sqlite:///./data/easycode.db"

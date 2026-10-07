@@ -70,10 +70,10 @@ def qdrant_available() -> bool:
 @pytest.fixture
 def neo4j_available() -> bool:
     try:
-        from backend.app.graph.store import GraphStore
+        from backend.app.graph import build_graph_store
 
-        store = GraphStore()
-        store.run_cypher("RETURN 1 AS ok")
+        store = build_graph_store()
+        store.ping()
         store.close()
         return True
     except Exception:

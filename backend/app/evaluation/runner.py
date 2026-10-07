@@ -28,7 +28,7 @@ from backend.app.evaluation.metrics import (
     relevant_file_rate,
 )
 from backend.app.generation.answer import INSUFFICIENT_EVIDENCE, generate_answer
-from backend.app.graph.store import GraphStore
+from backend.app.graph import build_graph_store
 from backend.app.ingestion.pipeline import index_repository, register_repository, repository_path
 from backend.app.retrieval.hybrid import retrieve_hybrid, retrieve_vector_only
 from backend.app.storage.database import RepositoryStore
@@ -117,7 +117,7 @@ def _index_workspace(repo_id: str, store: RepositoryStore) -> None:
     vector_store.delete_repository(repo_id)
     chunk_count = vector_store.store_chunks(chunks)
 
-    graph_store = GraphStore()
+    graph_store = build_graph_store()
     try:
         from backend.app.ingestion.repository import LANGUAGE_EXTENSIONS
 
@@ -158,7 +158,7 @@ def evaluate_question(
     system: str,
     repository_id: str,
     vector_store: VectorStore,
-    graph_store: GraphStore,
+    graph_store,
     generate: bool = True,
 ) -> QuestionResult:
     """Score one question against one system."""
@@ -231,7 +231,7 @@ def run_benchmark(
     metadata = store.get(repository_id)
 
     vector_store = VectorStore()
-    graph_store = GraphStore()
+    graph_store = build_graph_store()
 
     results: list[QuestionResult] = []
     try:

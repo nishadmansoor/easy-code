@@ -1,7 +1,9 @@
 """Qdrant-backed semantic index."""
 
 import logging
+import threading
 import uuid
+from pathlib import Path
 
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
@@ -40,6 +42,34 @@ def _point_id(chunk: Chunk) -> str:
     return str(uuid.uuid5(uuid.NAMESPACE_URL, key))
 
 
+_embedded_client: QdrantClient | None = None
+_client_lock = threading.Lock()
+
+
+def _build_client() -> QdrantClient:
+    """A server client, or an embedded one backed by a local directory.
+
+    Embedded Qdrant locks its storage directory to a single client, so the
+    embedded client is a process-wide singleton: a second one would raise
+    "already accessed by another instance". Server clients are cheap and
+    stateless, so those are created per store.
+
+    The single-client rule also means the API must run with one worker in
+    embedded mode.
+    """
+    if not settings.embedded:
+        return QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port, timeout=60)
+
+    global _embedded_client
+    with _client_lock:
+        if _embedded_client is None:
+            path = Path(settings.qdrant_path)
+            path.mkdir(parents=True, exist_ok=True)
+            logger.info("Using embedded Qdrant at %s", path)
+            _embedded_client = QdrantClient(path=str(path))
+        return _embedded_client
+
+
 class VectorStore:
     def __init__(
         self,
@@ -48,9 +78,7 @@ class VectorStore:
         client: QdrantClient | None = None,
     ):
         self.collection_name = collection_name or settings.qdrant_collection
-        self.client = client or QdrantClient(
-            host=settings.qdrant_host, port=settings.qdrant_port, timeout=60
-        )
+        self.client = client or _build_client()
         self.embedding_model = embedding_model or get_embedding_model()
         self._ensure_collection()
 
@@ -64,6 +92,11 @@ class VectorStore:
                 ),
             )
             logger.info("Created Qdrant collection %s", self.collection_name)
+
+        if settings.embedded:
+            # Local Qdrant ignores payload indexes and warns about it. Filters
+            # still work; only the lookup optimisation is missing.
+            return
 
         for field in INDEXED_PAYLOAD_FIELDS:
             try:
