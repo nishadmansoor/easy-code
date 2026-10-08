@@ -198,3 +198,34 @@ def test_cypher_is_refused_with_a_useful_message(store):
 
 def test_ping(store):
     assert store.ping() is True
+
+
+class TestGraphRetrievalLabels:
+    """Relationship labels must name their target.
+
+    A label like "imports this file" is a dangling reference: the model sees
+    each item on its own and cannot tell which file "this" is, nor which way
+    the edge runs. That ambiguity made it abstain on questions the graph had
+    already answered.
+    """
+
+    def test_dependency_labels_name_the_file(self, store):
+        from backend.app.retrieval.graph_retrieval import find_file_dependencies
+
+        items, facts = find_file_dependencies(store, REPO_ID, ["app/core/session.py"])
+        assert items
+
+        labels = {item.relationship for item in items}
+        assert not any("this file" in label for label in labels), labels
+        assert "imports app/core/session.py" in labels
+        assert any(fact.startswith("app/core/session.py is imported by:") for fact in facts)
+
+    def test_both_directions_are_distinguishable(self, store):
+        from backend.app.retrieval.graph_retrieval import find_file_dependencies
+
+        items, _ = find_file_dependencies(store, REPO_ID, ["app/auth/service.py"])
+        by_path = {item.file_path: item.relationship for item in items}
+
+        # main.py imports service.py; service.py imports repository.py.
+        assert by_path.get("app/main.py") == "imports app/auth/service.py"
+        assert by_path.get("app/users/repository.py") == "imported by app/auth/service.py"

@@ -207,8 +207,13 @@ def find_file_dependencies(
             facts.append(f"{file_path} is imported by: " + ", ".join(importers[:MAX_PER_QUERY]))
         if imported:
             facts.append(f"{file_path} imports: " + ", ".join(imported[:MAX_PER_QUERY]))
-        for path in (importers + imported)[:MAX_PER_QUERY]:
-            relationship = "imports this file" if path in importers else "imported by this file"
+        # Name the target explicitly. "imports this file" is a dangling
+        # reference: the model sees the item out of context and cannot tell
+        # which file "this" is, nor which direction the edge runs.
+        labelled = [(path, f"imports {file_path}") for path in importers] + [
+            (path, f"imported by {file_path}") for path in imported
+        ]
+        for path, relationship in labelled[:MAX_PER_QUERY]:
             items.append(_item(path, "file", path, 0, 0, TIER_DEPENDENCY, relationship, score=0.6))
     return items, facts
 

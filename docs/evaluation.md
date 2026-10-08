@@ -53,18 +53,21 @@ hallucination rate.
 Both systems used the same index, the same 12-item context budget, the same
 `all-MiniLM-L6-v2` embeddings and the same `qwen2.5:7b` model via Ollama.
 
-**`psf/requests`** — 121 files, 891 entities, 927 chunks, 886 graph nodes,
-2,194 relationships, indexed in 81s. 10 questions.
+**`psf/requests`** — 121 files, 891 entities, 927 chunks, 929 graph nodes,
+2,286 relationships. 10 questions.
 
 | Metric | Vector-only | Hybrid | Δ |
 | --- | ---: | ---: | ---: |
 | Recall@1 | 0.550 | **0.700** | +0.150 |
-| Recall@3 | 0.850 | **0.950** | +0.100 |
+| Recall@3 | 0.850 | **0.900** | +0.050 |
 | Recall@5 | 0.950 | 0.950 | 0.000 |
-| Precision@5 | 0.258 | **0.395** | +0.137 |
-| MRR | 0.742 | **0.867** | +0.125 |
+| Recall@10 | 0.950 | **1.000** | +0.050 |
+| Precision@5 | 0.258 | **0.385** | +0.127 |
+| MRR | 0.742 | **0.853** | +0.112 |
 | Entity coverage | 0.583 | **0.767** | +0.183 |
+| Mention coverage | 0.800 | **1.000** | +0.200 |
 | Citation accuracy | 0.900 | **1.000** | +0.100 |
+| Citation coverage | 0.850 | **0.900** | +0.050 |
 | Hallucination rate | 0.000 | 0.000 | 0.000 |
 
 **`miniapp`** (the deterministic fixture) — 13 files, 41 entities, 78
@@ -72,14 +75,14 @@ relationships. 13 questions.
 
 | Metric | Vector-only | Hybrid | Δ |
 | --- | ---: | ---: | ---: |
-| Recall@3 | 0.731 | **0.776** | +0.045 |
-| Recall@5 | 0.904 | **0.936** | +0.032 |
-| Precision@5 | 0.323 | **0.458** | +0.135 |
-| MRR | 0.801 | **0.810** | +0.009 |
+| Recall@3 | 0.731 | **0.853** | +0.122 |
+| Recall@5 | 0.904 | **0.974** | +0.071 |
+| Precision@5 | 0.323 | **0.473** | +0.150 |
+| MRR | 0.801 | **0.833** | +0.032 |
 | Entity coverage | 0.769 | **0.962** | +0.192 |
-| Mention coverage | 0.846 | **0.962** | +0.115 |
-| Citation coverage | 0.712 | **0.859** | +0.147 |
-| Citation accuracy | 0.923 | **1.000** | +0.077 |
+| Mention coverage | 0.654 | **0.885** | +0.231 |
+| Citation coverage | 0.577 | **0.782** | +0.205 |
+| Citation accuracy | 0.846 | **1.000** | +0.154 |
 | Hallucination rate | 0.000 | 0.000 | 0.000 |
 
 **The answer to the research question is yes, with a specific shape.** The graph
@@ -127,6 +130,27 @@ and all three were prompt-induced rather than retrieval failures:
 The verifier caught all three before they reached the user, which is the point
 of verifying rather than trusting the prompt. But they are a useful reminder
 that a small local model treats prompt content as source material.
+
+A fourth cause was a retrieval bug rather than a prompt one, and it produced
+the opposite failure — abstaining when the answer was in hand. Asked *"What
+imports `mods/diff/hooks/git/index.ts`?"* against `anthropics/claude-code`, the
+system answered *"I couldn't find enough evidence"* on 5 runs out of 5, despite
+the graph holding 80 importers and the fact appearing verbatim in the context.
+
+The cause was a label. Graph results for import questions were tagged
+`"imports this file"` — a dangling reference. Each retrieved item reaches the
+model on its own, so "this file" pointed at nothing and the direction of the
+edge was ambiguous. With the top semantic hits being modules *inside* that
+directory, the model reconciled the two by deciding the facts meant something
+else. Labels now name their target (`"imports mods/diff/hooks/git/index.ts"`),
+matching what the caller and inheritance retrievers already did, and the
+failure rate went to 0 out of 5.
+
+Worth recording how it was found: a prompt change was tried first, declaring
+structural facts authoritative. It changed nothing — still 5 out of 5. Only
+dumping the assembled context showed the real cause. Reproducing the exact
+failing case mattered too, because the same question shape against
+`pallets/click` answered correctly every time.
 
 One honest miss remains: on `requests`, the hybrid's single navigation question
 (*"Where would I change the code to add a new retry policy?"*) scored 0.0 mention
